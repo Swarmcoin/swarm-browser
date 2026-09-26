@@ -16,7 +16,8 @@ from pathlib import Path
 
 # Repository root: swarm/devutils/<this file>
 ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / 'build' / 'src'
+SRC = (Path(sys.argv[1]).resolve() if len(sys.argv) > 1
+       else ROOT / 'build' / 'src')
 fail = []
 
 
@@ -72,7 +73,7 @@ for p in [ROOT / 'build.py', ROOT / 'package.py',
 
 print('JavaScript (node --check)')
 for p in [ROOT / '.github' / 'actions' / 'stage' / 'index.js'] + \
-         sorted(ROOT.glob('swarm/extensions/*/*.js')):
+         sorted(ROOT.glob('swarm/extensions/*/**/*.js')):
     try:
         # index.js and the extension scripts are ES modules.
         res = subprocess.run(['node', '--input-type=module', '--check'],
@@ -89,7 +90,7 @@ for p in [ROOT / '.github' / 'actions' / 'stage' / 'index.js'] + \
     except Exception as exc:  # noqa: BLE001
         bad('js', p.relative_to(ROOT), exc)
 
-print('HTML (tag balance of the popups)')
+print('HTML (tag balance of every extension page)')
 VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link',
         'meta', 'param', 'source', 'track', 'wbr'}
 
@@ -115,7 +116,7 @@ class Balance(HTMLParser):
         self.stack.pop()
 
 
-for p in sorted(ROOT.glob('swarm/extensions/*/popup.html')):
+for p in sorted(ROOT.glob('swarm/extensions/*/**/*.html')):
     try:
         parser = Balance()
         parser.feed(p.read_text(encoding='utf-8'))

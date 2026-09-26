@@ -12,7 +12,9 @@ from pathlib import Path
 
 # Repository root: swarm/devutils/<this file>
 ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / 'build' / 'src'
+# The prepared tree: build/src, or a path given on the command line.
+SRC = (Path(sys.argv[1]).resolve() if len(sys.argv) > 1
+       else ROOT / 'build' / 'src')
 OUT = ROOT / 'swarm' / 'patches' / 'swarm'
 
 BRANDING_NEW = """COMPANY_FULLNAME=Swarm
@@ -77,6 +79,87 @@ def edit_install_modes(text, path):
                '            L"SWARM Browser PDF Document",  // PDF ProgID description.\n',
                path)
     return text
+
+
+# SWARM's own COM/install identifiers, generated with uuid.uuid4() on
+# 2026-09-26. Stock ungoogled-chromium ships Chromium's, so a SWARM install and
+# a Chromium install would fight over the same Active Setup key, the same COM
+# CLSIDs and the same AppContainer sandbox profile. Every one of these is a
+# registry or COM identity the installer writes, so every one must be ours.
+#
+# The two IIDs are also TypeLib identities compiled into the .idl files, so
+# they are changed in BOTH places (see edit_elevation_service_idl and
+# edit_tracing_service_idl below). Changing only the header would leave the
+# registered TypeLib describing an interface with a different IID.
+SWARM_ACTIVE_SETUP_GUID = '{292B5E35-79C4-4443-B288-986C32D03F36}'
+SWARM_TOAST_ACTIVATOR_CLSID = '9DF10883-3C81-4AE7-A330-62E0AC876D5C'
+SWARM_ELEVATOR_CLSID = 'C26E8648-5605-4693-824C-5FF11F2F6E7B'
+SWARM_ELEVATOR_IID = '3AB5A56A-0742-4028-A897-699CE55280BC'
+SWARM_TRACING_CLSID = '4BB29995-9C49-465B-B9D2-19E04D7EE366'
+SWARM_TRACING_IID = '7BC2EB3C-A034-4345-939D-348139AAC577'
+# An AppContainer SID is an arbitrary S-1-15-2 value that Chromium hands to
+# the sandbox verbatim (chrome_content_browser_client.cc appends a suffix).
+# Sharing Chromium's would share the AppContainer profile under
+# %LOCALAPPDATA%\Packages.
+SWARM_SANDBOX_SID_PREFIX = ('S-1-15-2-2465972275-1438521111-4273585194-'
+                            '3144023244-3347025105-')
+# Chromium's IElevatorChromium, the v1 interface its elevation service also
+# implements. Not registered by the installer, but still a Chromium COM
+# identity that a SWARM build should not claim.
+SWARM_ELEVATOR_V1_IID = '06042C9A-CD8B-4DA6-AB51-4B1D18A0BA10'
+
+
+OLD_INSTALL_GUIDS = '        .active_setup_guid =\n            L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup\n                                                        // GUID.\n        .toast_activator_clsid = {0x635EFA6F,\n                                  0x08D6,\n                                  0x4EC9,\n                                  {0xBD, 0x14, 0x8A, 0x0F, 0xDE, 0x97, 0x51,\n                                   0x59}},  // Toast Activator CLSID.\n        .elevator_clsid = {0xD133B120,\n                           0x6DB4,\n                           0x4D6B,\n                           {0x8B, 0xFE, 0x83, 0xBF, 0x8C, 0xA1, 0xB1,\n                            0xB0}},  // Elevator CLSID.\n        .elevator_iid = {0xbb19a0e5,\n                         0xc6,\n                         0x4966,\n                         {0x94, 0xb2, 0x5a, 0xfe, 0xc6, 0xfe, 0xd9,\n                          0x3a}},  // IElevator IID and TypeLib\n        // {BB19A0E5-00C6-4966-94B2-5AFEC6FED93A}.\n        .old_elevator_iids = {},\n        .tracing_service_clsid = {0x83f69367,\n                                  0x442d,\n                                  0x447f,\n                                  {0x8b, 0xcc, 0x0e, 0x3f, 0x97, 0xbe, 0x9c,\n                                   0xf2}},  // SystemTraceSession CLSID.\n        .tracing_service_iid = {0xe0b03e2d,\n                                0x7682,\n                                0x4d83,\n                                {0xb9, 0xff, 0x45, 0x74, 0xaf, 0x72, 0x05,\n                                 0x00}},  // ISystemTraceSessionChromium IID and\n                                          // TypeLib\n        .old_tracing_service_iids = kOldTracingServiceIids,\n'
+
+NEW_INSTALL_GUIDS = '        // SWARM: every identifier below is ours, not Chromium\'s. Stock\n        // ungoogled-chromium keeps Chromium\'s, so the two would collide\n        // on the same Active Setup key, the same COM CLSIDs and the same\n        // AppContainer sandbox profile if both were installed.\n        .active_setup_guid =\n            L"{292B5E35-79C4-4443-B288-986C32D03F36}",  // Active Setup\n                                                        // GUID.\n        .toast_activator_clsid = {0x9df10883,\n                                  0x3c81,\n                                  0x4ae7,\n                                  {0xa3, 0x30, 0x62, 0xe0, 0xac, 0x87, 0x6d, 0x5c}},\n        // Toast Activator CLSID.\n        .elevator_clsid = {0xc26e8648,\n                           0x5605,\n                           0x4693,\n                           {0x82, 0x4c, 0x5f, 0xf1, 0x1f, 0x2f, 0x6e, 0x7b}},\n        // Elevator CLSID.\n        .elevator_iid = {0x3ab5a56a,\n                         0x0742,\n                         0x4028,\n                         {0xa8, 0x97, 0x69, 0x9c, 0xe5, 0x52, 0x80, 0xbc}},\n        // IElevator2Chromium IID and TypeLib. Kept in sync with\n        // the uuid() in chrome/elevation_service/elevation_service_idl.idl.\n        .old_elevator_iids = {},\n        .tracing_service_clsid = {0x4bb29995,\n                                  0x9c49,\n                                  0x465b,\n                                  {0xb9, 0xd2, 0x19, 0xe0, 0x4d, 0x7e, 0xe3, 0x66}},\n        // SystemTraceSession CLSID.\n        .tracing_service_iid = {0x7bc2eb3c,\n                                0xa034,\n                                0x4345,\n                                {0x93, 0x9d, 0x34, 0x81, 0x39, 0xaa, 0xc5, 0x77}},\n        // ISystemTraceSessionChromium IID and TypeLib. Kept in sync\n        // with the uuid() in chrome/windows_services/\n        // elevated_tracing_service/tracing_service_idl.idl.\n        // SWARM has never shipped, so there is no retired IID to clean\n        // up. Keeping Chromium\'s here would make a SWARM install or\n        // uninstall delete a Chromium install\'s registration.\n        .old_tracing_service_iids = {},\n'
+
+OLD_TRACING_IID_ARRAY = 'inline constexpr auto kOldTracingServiceIids = std::to_array<IID>({\n    // Replaced in 2026-09. Delete after 2028-09.\n    // {A3FD580A-FFD4-4075-9174-75D0B199D3CB}\n    {0xa3fd580a,\n     0xffd4,\n     0x4075,\n     {0x91, 0x74, 0x75, 0xd0, 0xb1, 0x99, 0xd3, 0xcb}},\n});\n'
+
+NEW_TRACING_IID_ARRAY = "// SWARM: Chromium's retired tracing IID is deliberately not carried over;\n// see .old_tracing_service_iids below.\n"
+
+
+OLD_SANDBOX_SID = '        .sandbox_sid_prefix =\n            L"S-1-15-2-3251537155-1984446955-2931258699-841473695-"\n            L"1938553385-"\n            L"924012148-",  // App container sid prefix for sandbox.\n'
+
+NEW_SANDBOX_SID = '        .sandbox_sid_prefix =\n            L"SWARM_SID_PLACEHOLDER",  // SWARM app container sid prefix.\n'
+
+
+def edit_install_modes_guids(text, path):
+    """Give SWARM its own COM, Active Setup and sandbox identities."""
+    text = sub(text, OLD_INSTALL_GUIDS, NEW_INSTALL_GUIDS, path)
+    text = sub(text, OLD_TRACING_IID_ARRAY, NEW_TRACING_IID_ARRAY, path)
+    text = sub(text, OLD_SANDBOX_SID,
+               NEW_SANDBOX_SID.replace("SWARM_SID_PLACEHOLDER",
+                                       SWARM_SANDBOX_SID_PREFIX),
+               path)
+    return text
+
+
+ELEVATOR_V1_OLD = '[\n  object,\n  oleautomation,\n  uuid(B88C45B9-8825-4629-B83E-77CC67D9CEED),\n  helpstring("IElevatorChromium Interface"),\n'
+
+ELEVATOR_V2_OLD = '[\n  object,\n  oleautomation,\n  uuid(BB19A0E5-00C6-4966-94B2-5AFEC6FED93A),\n  helpstring("IElevator2Chromium Interface"),\n'
+
+TRACING_OLD = '[\n  object,\n  oleautomation,\n  uuid(E0B03E2D-7682-4D83-B9FF-4574AF720500),\n  helpstring("ISystemTraceSessionChromium Interface"),\n'
+
+
+def edit_elevation_service_idl(text, path):
+    """Give SWARM's flavour of IElevator its own interface identity.
+
+    Chromium gives every flavour (Chromium, Chrome, Beta, Dev, Canary)
+    its own IID of the same interface precisely so the flavours can
+    co-exist -- the file says so itself. SWARM is a flavour, so it gets
+    its own.
+    """
+    text = sub(text, ELEVATOR_V1_OLD,
+               '// SWARM: SWARM is a flavour of Chromium and gets its own interface\n// identity, exactly as Chrome, Beta, Dev and Canary each do above.\n[\n  object,\n  oleautomation,\n  uuid(%s),\n  helpstring("IElevatorChromium Interface"),\n' % SWARM_ELEVATOR_V1_IID, path)
+    text = sub(text, ELEVATOR_V2_OLD,
+               '// SWARM: this uuid must equal .elevator_iid in\n// chrome/install_static/chromium_install_modes.h, because the\n// installer registers that IID as this interface\'s TypeLib.\n[\n  object,\n  oleautomation,\n  uuid(%s),\n  helpstring("IElevator2Chromium Interface"),\n' % SWARM_ELEVATOR_IID, path)
+    return text
+
+
+def edit_tracing_service_idl(text, path):
+    """Same for the elevated tracing service's per-flavour interface."""
+    return sub(text, TRACING_OLD,
+               '// SWARM: this uuid must equal .tracing_service_iid in\n// chrome/install_static/chromium_install_modes.h, because the\n// installer registers that IID as this interface\'s TypeLib.\n[\n  object,\n  oleautomation,\n  uuid(%s),\n  helpstring("ISystemTraceSessionChromium Interface"),\n' % SWARM_TRACING_IID, path)
 
 
 def edit_launch_context_win(text, path):
@@ -168,12 +251,25 @@ def edit_chrome_main_delegate(text, path):
 
 
 # ---------------------------------------------------- 3. component extensions
-WALLET_FILES = ['popup.html', 'popup.js', 'background.js', 'swarm.css',
-                'icons/wallet-16.png', 'icons/wallet-32.png',
-                'icons/wallet-48.png', 'icons/wallet-128.png']
-REWARDS_FILES = ['popup.html', 'popup.js', 'background.js', 'swarm.css',
-                 'icons/rewards-16.png', 'icons/rewards-32.png',
-                 'icons/rewards-48.png', 'icons/rewards-128.png']
+def _extension_files(folder):
+    """Every file in a bundled extension except its manifest, sorted.
+
+    Read from disk rather than hardcoded: the wallet is maintained in its own
+    repository and copied in, so a list written here would go stale the first
+    time that extension gains a file. manifest.json is excluded because it is
+    registered in browser_resources.grd, not in the component one.
+    """
+    root = ROOT / 'swarm' / 'extensions' / folder
+    files = sorted(f.relative_to(root).as_posix() for f in root.rglob('*')
+                   if f.is_file())
+    missing = [f for f in files if f == 'manifest.json']
+    if not missing:
+        raise SystemExit(f'{root} has no manifest.json')
+    return [f for f in files if f != 'manifest.json']
+
+
+WALLET_FILES = _extension_files('wallet')
+REWARDS_FILES = _extension_files('rewards')
 
 
 def _idr(prefix, relpath):
@@ -279,7 +375,12 @@ def edit_allowlist(text, path):
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
-        'chrome/install_static/chromium_install_modes.h': edit_install_modes,
+        'chrome/install_static/chromium_install_modes.h':
+            lambda t, p: edit_install_modes_guids(edit_install_modes(t, p), p),
+        'chrome/elevation_service/elevation_service_idl.idl':
+            edit_elevation_service_idl,
+        'chrome/windows_services/elevated_tracing_service/'
+        'tracing_service_idl.idl': edit_tracing_service_idl,
         'chrome/browser/extensions/api/messaging/launch_context_win.cc':
             edit_launch_context_win,
     },

@@ -14,7 +14,7 @@
        </if>
 --- a/chrome/browser/resources/component_extension_resources.grd
 +++ b/chrome/browser/resources/component_extension_resources.grd
-@@ -21,6 +21,26 @@
+@@ -21,6 +21,38 @@
  
        <include name="IDR_READING_MODE_GDOC_HELPER_CONTENT_JS" file="reading_mode_gdocs_helper/content.js" type="BINDATA" />
        <include name="IDR_READING_MODE_GDOC_HELPER_GDOCS_SCRIPT_JS" file="reading_mode_gdocs_helper/gdocs_script.js" type="BINDATA" />
@@ -22,50 +22,74 @@
 +      <!-- SWARM: bundled SWARM Wallet and SWARM Rewards extension files.
 +           The resource path prefix must match the root_directory passed to
 +           ComponentLoader::Add() in component_loader.cc. -->
++      <include name="IDR_SWARM_WALLET_BACKGROUND_JS" file="swarm_wallet/background.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_COMMON_JS" file="swarm_wallet/common.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_FONTS_JETBRAINS_MONO_400_WOFF2" file="swarm_wallet/fonts/jetbrains-mono-400.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_FONTS_MANROPE_400_WOFF2" file="swarm_wallet/fonts/manrope-400.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_FONTS_MANROPE_600_WOFF2" file="swarm_wallet/fonts/manrope-600.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_FONTS_SORA_600_WOFF2" file="swarm_wallet/fonts/sora-600.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_SWARM_MARK_SVG" file="swarm_wallet/icons/swarm-mark.svg" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_WALLET_128_PNG" file="swarm_wallet/icons/wallet-128.png" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_WALLET_192_PNG" file="swarm_wallet/icons/wallet-192.png" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_LIB_QR_JS" file="swarm_wallet/lib/qr.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_LIB_SENDER_JS" file="swarm_wallet/lib/sender.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ONBOARDING_HTML" file="swarm_wallet/onboarding.html" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ONBOARDING_JS" file="swarm_wallet/onboarding.js" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_POPUP_HTML" file="swarm_wallet/popup.html" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_POPUP_JS" file="swarm_wallet/popup.js" type="BINDATA" />
-+      <include name="IDR_SWARM_WALLET_BACKGROUND_JS" file="swarm_wallet/background.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_SETTINGS_HTML" file="swarm_wallet/settings.html" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_SETTINGS_JS" file="swarm_wallet/settings.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_SIDEPANEL_HTML" file="swarm_wallet/sidepanel.html" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_SIDEPANEL_JS" file="swarm_wallet/sidepanel.js" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_SWARM_CSS" file="swarm_wallet/swarm.css" type="BINDATA" />
-+      <include name="IDR_SWARM_WALLET_ICONS_WALLET_16_PNG" file="swarm_wallet/icons/wallet-16.png" type="BINDATA" />
-+      <include name="IDR_SWARM_WALLET_ICONS_WALLET_32_PNG" file="swarm_wallet/icons/wallet-32.png" type="BINDATA" />
-+      <include name="IDR_SWARM_WALLET_ICONS_WALLET_48_PNG" file="swarm_wallet/icons/wallet-48.png" type="BINDATA" />
-+      <include name="IDR_SWARM_WALLET_ICONS_WALLET_128_PNG" file="swarm_wallet/icons/wallet-128.png" type="BINDATA" />
-+      <include name="IDR_SWARM_REWARDS_POPUP_HTML" file="swarm_rewards/popup.html" type="BINDATA" />
-+      <include name="IDR_SWARM_REWARDS_POPUP_JS" file="swarm_rewards/popup.js" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_BACKGROUND_JS" file="swarm_rewards/background.js" type="BINDATA" />
-+      <include name="IDR_SWARM_REWARDS_SWARM_CSS" file="swarm_rewards/swarm.css" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_128_PNG" file="swarm_rewards/icons/rewards-128.png" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_16_PNG" file="swarm_rewards/icons/rewards-16.png" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_32_PNG" file="swarm_rewards/icons/rewards-32.png" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_48_PNG" file="swarm_rewards/icons/rewards-48.png" type="BINDATA" />
-+      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_128_PNG" file="swarm_rewards/icons/rewards-128.png" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_POPUP_HTML" file="swarm_rewards/popup.html" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_POPUP_JS" file="swarm_rewards/popup.js" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_SWARM_CSS" file="swarm_rewards/swarm.css" type="BINDATA" />
  
        <include name="IDR_GLIC_EXTENSION_MANIFEST" file="glic/extension/manifest.json" resource_path="glic_extension/manifest.json" type="BINDATA" />
        <include name="IDR_GLIC_EXTENSION_BACKGROUND_JS" file="${root_gen_dir}/chrome/browser/resources/glic/extension/tsc/background.js" use_base_dir="false" resource_path="glic_extension/background.js" type="BINDATA" />
 --- a/chrome/browser/resources/BUILD.gn
 +++ b/chrome/browser/resources/BUILD.gn
-@@ -247,6 +247,25 @@
+@@ -247,6 +247,37 @@
        "network_speech_synthesis/tts_extension.js",
        "reading_mode_gdocs_helper/content.js",
        "reading_mode_gdocs_helper/gdocs_script.js",
 +      # SWARM: bundled SWARM extensions.
 +      "swarm_wallet/manifest.json",
++      "swarm_wallet/background.js",
++      "swarm_wallet/common.js",
++      "swarm_wallet/fonts/jetbrains-mono-400.woff2",
++      "swarm_wallet/fonts/manrope-400.woff2",
++      "swarm_wallet/fonts/manrope-600.woff2",
++      "swarm_wallet/fonts/sora-600.woff2",
++      "swarm_wallet/icons/swarm-mark.svg",
++      "swarm_wallet/icons/wallet-128.png",
++      "swarm_wallet/icons/wallet-192.png",
++      "swarm_wallet/lib/qr.js",
++      "swarm_wallet/lib/sender.js",
++      "swarm_wallet/onboarding.html",
++      "swarm_wallet/onboarding.js",
 +      "swarm_wallet/popup.html",
 +      "swarm_wallet/popup.js",
-+      "swarm_wallet/background.js",
++      "swarm_wallet/settings.html",
++      "swarm_wallet/settings.js",
++      "swarm_wallet/sidepanel.html",
++      "swarm_wallet/sidepanel.js",
 +      "swarm_wallet/swarm.css",
-+      "swarm_wallet/icons/wallet-16.png",
-+      "swarm_wallet/icons/wallet-32.png",
-+      "swarm_wallet/icons/wallet-48.png",
-+      "swarm_wallet/icons/wallet-128.png",
 +      "swarm_rewards/manifest.json",
-+      "swarm_rewards/popup.html",
-+      "swarm_rewards/popup.js",
 +      "swarm_rewards/background.js",
-+      "swarm_rewards/swarm.css",
++      "swarm_rewards/icons/rewards-128.png",
 +      "swarm_rewards/icons/rewards-16.png",
 +      "swarm_rewards/icons/rewards-32.png",
 +      "swarm_rewards/icons/rewards-48.png",
-+      "swarm_rewards/icons/rewards-128.png",
++      "swarm_rewards/popup.html",
++      "swarm_rewards/popup.js",
++      "swarm_rewards/swarm.css",
        "$root_gen_dir/chrome/browser/resources/glic/extension/tsc/background.js",
      ]
  
