@@ -39,7 +39,24 @@
  
  // Note: This list of indices must be kept in sync with the brand-specific
  // resource strings in chrome/installer/util/prebuild/create_string_rc.
-@@ -54,15 +54,15 @@
+@@ -33,14 +33,8 @@
+   NUM_INSTALL_MODES,
+ };
+ 
+-inline constexpr auto kOldTracingServiceIids = std::to_array<IID>({
+-    // Replaced in 2026-09. Delete after 2028-09.
+-    // {A3FD580A-FFD4-4075-9174-75D0B199D3CB}
+-    {0xa3fd580a,
+-     0xffd4,
+-     0x4075,
+-     {0x91, 0x74, 0x75, 0xd0, 0xb1, 0x99, 0xd3, 0xcb}},
+-});
++// SWARM: Chromium's retired tracing IID is deliberately not carried over;
++// see .old_tracing_service_iids below.
+ 
+ inline constexpr auto kInstallModes = std::to_array<InstallConstants>({
+     // The primary (and only) install mode for Chromium.
+@@ -54,47 +48,55 @@
          .logo_suffix = L"",  // No logo suffix for the primary install mode.
          .app_guid =
              L"",  // Empty app_guid since no integration with Google Update.
@@ -59,9 +76,143 @@
          .pdf_prog_id_description =
 -            L"Chromium PDF Document",  // PDF ProgID description.
 +            L"SWARM Browser PDF Document",  // PDF ProgID description.
++        // SWARM: every identifier below is ours, not Chromium's. Stock
++        // ungoogled-chromium keeps Chromium's, so the two would collide
++        // on the same Active Setup key, the same COM CLSIDs and the same
++        // AppContainer sandbox profile if both were installed.
          .active_setup_guid =
-             L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup
+-            L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup
++            L"{292B5E35-79C4-4443-B288-986C32D03F36}",  // Active Setup
                                                          // GUID.
+-        .toast_activator_clsid = {0x635EFA6F,
+-                                  0x08D6,
+-                                  0x4EC9,
+-                                  {0xBD, 0x14, 0x8A, 0x0F, 0xDE, 0x97, 0x51,
+-                                   0x59}},  // Toast Activator CLSID.
+-        .elevator_clsid = {0xD133B120,
+-                           0x6DB4,
+-                           0x4D6B,
+-                           {0x8B, 0xFE, 0x83, 0xBF, 0x8C, 0xA1, 0xB1,
+-                            0xB0}},  // Elevator CLSID.
+-        .elevator_iid = {0xbb19a0e5,
+-                         0xc6,
+-                         0x4966,
+-                         {0x94, 0xb2, 0x5a, 0xfe, 0xc6, 0xfe, 0xd9,
+-                          0x3a}},  // IElevator IID and TypeLib
+-        // {BB19A0E5-00C6-4966-94B2-5AFEC6FED93A}.
++        .toast_activator_clsid = {0x9df10883,
++                                  0x3c81,
++                                  0x4ae7,
++                                  {0xa3, 0x30, 0x62, 0xe0, 0xac, 0x87, 0x6d, 0x5c}},
++        // Toast Activator CLSID.
++        .elevator_clsid = {0xc26e8648,
++                           0x5605,
++                           0x4693,
++                           {0x82, 0x4c, 0x5f, 0xf1, 0x1f, 0x2f, 0x6e, 0x7b}},
++        // Elevator CLSID.
++        .elevator_iid = {0x3ab5a56a,
++                         0x0742,
++                         0x4028,
++                         {0xa8, 0x97, 0x69, 0x9c, 0xe5, 0x52, 0x80, 0xbc}},
++        // IElevator2Chromium IID and TypeLib. Kept in sync with
++        // the uuid() in chrome/elevation_service/elevation_service_idl.idl.
+         .old_elevator_iids = {},
+-        .tracing_service_clsid = {0x83f69367,
+-                                  0x442d,
+-                                  0x447f,
+-                                  {0x8b, 0xcc, 0x0e, 0x3f, 0x97, 0xbe, 0x9c,
+-                                   0xf2}},  // SystemTraceSession CLSID.
+-        .tracing_service_iid = {0xe0b03e2d,
+-                                0x7682,
+-                                0x4d83,
+-                                {0xb9, 0xff, 0x45, 0x74, 0xaf, 0x72, 0x05,
+-                                 0x00}},  // ISystemTraceSessionChromium IID and
+-                                          // TypeLib
+-        .old_tracing_service_iids = kOldTracingServiceIids,
++        .tracing_service_clsid = {0x4bb29995,
++                                  0x9c49,
++                                  0x465b,
++                                  {0xb9, 0xd2, 0x19, 0xe0, 0x4d, 0x7e, 0xe3, 0x66}},
++        // SystemTraceSession CLSID.
++        .tracing_service_iid = {0x7bc2eb3c,
++                                0xa034,
++                                0x4345,
++                                {0x93, 0x9d, 0x34, 0x81, 0x39, 0xaa, 0xc5, 0x77}},
++        // ISystemTraceSessionChromium IID and TypeLib. Kept in sync
++        // with the uuid() in chrome/windows_services/
++        // elevated_tracing_service/tracing_service_idl.idl.
++        // SWARM has never shipped, so there is no retired IID to clean
++        // up. Keeping Chromium's here would make a SWARM install or
++        // uninstall delete a Chromium install's registration.
++        .old_tracing_service_iids = {},
+         .default_channel_name =
+             L"",  // Empty default channel name since no update integration.
+         .channel_strategy = ChannelStrategy::UNSUPPORTED,
+@@ -109,9 +111,7 @@
+         .pdf_doc_icon_resource_index =
+             icon_resources::kPDFDocIndex,  // PDF doc icon resource index.
+         .sandbox_sid_prefix =
+-            L"S-1-15-2-3251537155-1984446955-2931258699-841473695-"
+-            L"1938553385-"
+-            L"924012148-",  // App container sid prefix for sandbox.
++            L"S-1-15-2-2465972275-1438521111-4273585194-3144023244-3347025105-",  // SWARM app container sid prefix.
+     },
+ });
+ 
+--- a/chrome/elevation_service/elevation_service_idl.idl
++++ b/chrome/elevation_service/elevation_service_idl.idl
+@@ -132,10 +132,12 @@
+ // registered with unique IIDs for the various flavors of Chrome and Chromium.
+ // This allows the different flavors of Chrome/Chromium to co-exist without side
+ // effects.
+-[
+-  object,
+-  oleautomation,
+-  uuid(B88C45B9-8825-4629-B83E-77CC67D9CEED),
++// SWARM: SWARM is a flavour of Chromium and gets its own interface
++// identity, exactly as Chrome, Beta, Dev and Canary each do above.
++[
++  object,
++  oleautomation,
++  uuid(06042C9A-CD8B-4DA6-AB51-4B1D18A0BA10),
+   helpstring("IElevatorChromium Interface"),
+   pointer_default(unique)
+ ]
+@@ -192,10 +194,13 @@
+ // registered with unique IIDs for the various flavors of Chrome and Chromium.
+ // This allows the different flavors of Chrome/Chromium to co-exist without side
+ // effects.
+-[
+-  object,
+-  oleautomation,
+-  uuid(BB19A0E5-00C6-4966-94B2-5AFEC6FED93A),
++// SWARM: this uuid must equal .elevator_iid in
++// chrome/install_static/chromium_install_modes.h, because the
++// installer registers that IID as this interface's TypeLib.
++[
++  object,
++  oleautomation,
++  uuid(3AB5A56A-0742-4028-A897-699CE55280BC),
+   helpstring("IElevator2Chromium Interface"),
+   pointer_default(unique)
+ ]
+--- a/chrome/windows_services/elevated_tracing_service/tracing_service_idl.idl
++++ b/chrome/windows_services/elevated_tracing_service/tracing_service_idl.idl
+@@ -51,10 +51,13 @@
+ // ISystemTraceSession is registered with unique IIDs for the various flavors of
+ // Chrome and Chromium. This allows the different flavors of Chrome/Chromium to
+ // co-exist without side effects.
++// SWARM: this uuid must equal .tracing_service_iid in
++// chrome/install_static/chromium_install_modes.h, because the
++// installer registers that IID as this interface's TypeLib.
+ [
+   object,
+   oleautomation,
+-  uuid(E0B03E2D-7682-4D83-B9FF-4574AF720500),
++  uuid(7BC2EB3C-A034-4345-939D-348139AAC577),
+   helpstring("ISystemTraceSessionChromium Interface"),
+   pointer_default(unique)
+ ]
 --- a/chrome/browser/extensions/api/messaging/launch_context_win.cc
 +++ b/chrome/browser/extensions/api/messaging/launch_context_win.cc
 @@ -62,8 +62,11 @@

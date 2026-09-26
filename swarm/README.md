@@ -8,7 +8,7 @@ The rule is simple and it is the whole point of the layout:
 > `build.py` and `package.py`, every one of them marked `# SWARM`.
 
 That keeps a rebase onto the next Chromium release a submodule bump plus a
-re-check of this layer's own 15 hunks, instead of a merge across ungoogled's
+re-check of this layer's own 20 hunks, instead of a merge across ungoogled's
 several hundred.
 
 Upstream provenance of this checkout:
@@ -34,8 +34,9 @@ swarm/
   patches/swarm/swarm-component-extensions.patch
   brand/render_icons.py                re-cuts the SWARM mark into Chromium's icon set
   brand/icons/                         the rendered result (binary, copied in, not patched)
-  extensions/wallet/                   bundled SWARM Wallet component extension
+  extensions/wallet/                   bundled SWARM Wallet (copied from its own repo)
   extensions/rewards/                  bundled SWARM Rewards component extension
+  devutils/                            regenerate the series, verify it, parse-check it
   install_swarm_assets.py              copies icons + extensions into build/src
   flags.swarm.gn                       extra GN args, appended last
   revision.txt                         the SWARM layer's build number
@@ -52,7 +53,7 @@ And the four marked hooks outside it:
 
 ## The three patches
 
-### `swarm-branding.patch` (3 files, 4 hunks)
+### `swarm-branding.patch` (5 files, 9 hunks)
 
 * `chrome/app/theme/chromium/BRANDING` — company `Swarm`, product
   `SWARM Browser`, installer `SWARM Browser Installer`,
@@ -62,7 +63,11 @@ And the four marked hooks outside it:
 * `chrome/install_static/chromium_install_modes.h` — `kCompanyPathName` from
   `L""` to `L"Swarm"`, `kProductPathName` from `L"Chromium"` to
   `L"SWARM Browser"`, plus `base_app_name`, `base_app_id`, the HTML and PDF
-  ProgIDs, `direct_launch_url_scheme` and `kSafeBrowsingName`.
+  ProgIDs, `direct_launch_url_scheme` and `kSafeBrowsingName` — and the whole
+  install identity (see below).
+* `chrome/elevation_service/elevation_service_idl.idl` and
+  `chrome/windows_services/elevated_tracing_service/tracing_service_idl.idl` —
+  the two per-flavour interface uuids, kept in sync with the header.
 * `chrome/browser/extensions/api/messaging/launch_context_win.cc` — the native
   messaging registry key (see below).
 
@@ -102,13 +107,59 @@ The profile therefore lives under
 (`AppendChromeInstallSubDirectory` in `chrome/install_static/install_util.cc`
 appends `kCompanyPathName\kProductPathName`).
 
-**Not changed, on purpose:** `active_setup_guid`, `toast_activator_clsid`,
-`elevator_clsid`, `elevator_iid`, `tracing_service_clsid`,
-`tracing_service_iid` and `sandbox_sid_prefix` still hold Chromium's values, as
-they do in stock ungoogled-chromium. A SWARM install and a Chromium install on
-the same machine would collide on them. Minting SWARM GUIDs is a small change
-but it is a release-identity decision for the owner, so it is deliberately left
-open.
+### The install identity
+
+Stock ungoogled-chromium keeps every one of Chromium's Windows identifiers, so
+an ungoogled install and a Chromium install fight over the same Active Setup
+key, the same COM servers and the same sandbox profile. SWARM mints its own.
+Each of these is something the installer writes to the registry or registers
+with COM:
+
+| Field | What would have collided |
+| --- | --- |
+| `active_setup_guid` | `HKLM\Software\Microsoft\Active Setup\Installed Components\{guid}` |
+| `toast_activator_clsid` | the COM server Action Center calls back for toast clicks |
+| `elevator_clsid` | the elevation service's COM server |
+| `elevator_iid` | `IElevator2Chromium`'s IID, registered as its TypeLib |
+| `tracing_service_clsid` | the elevated tracing service's COM server |
+| `tracing_service_iid` | `ISystemTraceSessionChromium`'s IID and TypeLib |
+| `sandbox_sid_prefix` | the renderer AppContainer profile under `%LOCALAPPDATA%\Packages` |
+| `old_tracing_service_iids` | see below |
+
+`base_app_id` (the AppUserModelId, which decides taskbar grouping and jump
+lists) and `direct_launch_url_scheme` were already SWARM's in the branding
+change above. `app_guid` and `default_channel_name` stay empty: they exist for
+Google Update integration, which neither Chromium nor SWARM has.
+
+**The two IIDs are also TypeLib identities compiled into `.idl` files.** The
+elevation IDL states in its own comment that each flavour is given a distinct
+IID exactly so that the flavours can be installed side by side; the value in
+`chromium_install_modes.h` must equal the `uuid()` on `IElevator2Chromium`,
+because `install_worker.cc` registers that IID as the interface's TypeLib.
+Changing only the header would register a TypeLib describing an interface with
+a different IID. The patch therefore changes both, and the same for
+`ISystemTraceSessionChromium`. `IElevatorChromium`, the v1 interface the same
+COM class implements, is given a SWARM uuid too — nothing registers it, but it
+is still a Chromium identity a SWARM build should not claim.
+
+**`old_tracing_service_iids` is emptied, not re-pointed.** Chromium lists there
+the tracing IID it retired in 2026-09, and
+`chrome/installer/setup/{install_worker,setup_main}.cc` pass that list to the
+installer so it can *delete* the stale registration. SWARM has never shipped,
+so it has nothing to clean up — and keeping Chromium's entry would mean a SWARM
+install or uninstall deleting a Chromium install's COM registration. That is
+the same collision seen from the other side.
+
+**`sandbox_sid_prefix`** is not derived from anything; Chromium hands the
+string to the sandbox verbatim (`ChromeContentBrowserClient::
+GetAppContainerSidForSandboxType` appends a per-process suffix), and Chrome's
+channels differ from Chromium's only in the last subauthority. SWARM's is a
+fresh `S-1-15-2` value.
+
+The values themselves live in `swarm-branding.patch` and in
+`swarm/devutils/make_swarm_patches.py`, which generated them with
+`uuid.uuid4()`. They are identifiers, not secrets, but they are SWARM's: do not
+copy them into another product.
 
 ### `swarm-privacy-defaults.patch` (4 files, 4 hunks)
 
@@ -168,6 +219,34 @@ The folder name under `chrome/browser/resources` (`swarm_wallet`,
 *and* the resource-path prefix in the grd. Change one and you must change all
 three; `swarm/install_swarm_assets.py` holds the mapping.
 
+The per-file lists in the grd and in `BUILD.gn` are **generated from the
+folders on disk** by `swarm/devutils/make_swarm_patches.py`, not typed out.
+The wallet is maintained in its own repository and copied in, so a hand-written
+list would go stale the first time it gained a file.
+
+## Where the wallet comes from
+
+`swarm/extensions/wallet` is not written here. It is a copy of
+`browser/extension` from the wallet repository:
+
+| | |
+| --- | --- |
+| Repository | `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) |
+| Branch | `codex/browser-wallet-host` |
+| Commit | `a1bc7d605a0f6e0c2faf1f832d216a8f092f1b84` |
+| Copied | 21 files; `test/`, `package.json` and `node_modules` left behind |
+
+`test/` and `package.json` exist only so the QR encoder can be run under
+`node --test` outside a browser; shipping them would put dead files in the pak.
+
+Re-copying after the wallet changes upstream is: copy the folder, drop those
+three, re-run `make_swarm_patches.py` (which picks up any new files by itself)
+and `install_swarm_assets.py`. **The `key` in `manifest.json` must survive the
+copy**, and it does: the wallet repository and this one hold the same public
+key, so the id is `gmmgmodmgnigcgboccjelpgedejejfap` on both sides and the
+native messaging host's `allowed_origins`
+(`browser/install/green.swarm.wallet_host.json` there) already names it.
+
 ## Extension ids
 
 Fixed by the `key` field (base64 DER SubjectPublicKeyInfo) in each
@@ -188,8 +267,8 @@ a component extension is never signed into a `.crx`. If the owner ever wants to
 publish either extension to a store, generate the store key there and expect a
 different id.
 
-Agent B2-wallet replaces the contents of `swarm/extensions/wallet`. The folder
-path, the `key` and therefore the id must not change.
+The folder path, the `key` and therefore the id must not change when the wallet
+is re-copied from its own repository.
 
 ## Icons
 
@@ -267,11 +346,14 @@ failure than a rejected hunk.
 2. `git -C ungoogled-chromium checkout <matching ungoogled tag>`.
 3. Re-prepare a tree (tarball, prune, both upstream series).
 4. Apply `swarm/patches/series`. Every hunk that fails points at a file
-   Chromium moved; the three patches touch 13 files, all listed above.
+   Chromium moved; the three patches touch 15 files, all listed above.
 5. Re-run `python swarm/brand/render_icons.py` and
    `python swarm/install_swarm_assets.py --source-tree build/src --dry-run`;
    the dry run fails loudly if an icon destination disappeared.
-6. Re-check the two verified facts in this file (the install-modes header and
-   the native-messaging registry literal) — both are exactly the kind of thing
-   Chromium moves between releases.
-7. Bump `swarm/revision.txt`.
+6. Re-check the verified facts in this file — the install-modes header, the
+   native-messaging registry literal, and that the two IIDs in the header still
+   match the `uuid()` lines in the two `.idl` files. All three are exactly the
+   kind of thing Chromium moves between releases.
+7. If the wallet has moved on, re-copy `swarm/extensions/wallet` from its
+   repository (see **Where the wallet comes from**) and check the id again.
+8. Bump `swarm/revision.txt`.
