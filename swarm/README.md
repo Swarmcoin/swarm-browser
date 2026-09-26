@@ -236,17 +236,29 @@ Locally (needs Visual Studio 2026 with the C++ workload and ~100 GB free):
 python build.py
 ```
 
-Without a compiler you can still prove the layer is sound, which is what was
-done for this commit:
+Without a compiler you can still prove the layer is sound, which is all that
+was possible for this commit:
 
 ```
-python build.py --tarball   # up to the patch step
+python swarm/devutils/prepare_and_verify.py   # download, prune, apply, copy
+python swarm/devutils/check_syntax.py         # parse everything we add
 ```
 
-or drive `ungoogled-chromium/utils/{downloads,prune_binaries,patches}.py`
-directly. 7-Zip is found through `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe`;
-without it the tar extractor falls back to pure Python, which works for the
-Chromium tarball but not for the `.tgz`/`.zip` Windows downloads.
+`prepare_and_verify.py` reproduces `build.py --tarball` up to (and including)
+the asset copy and stops before any compilation. It fetches only the one
+Windows download a patch actually touches (`typescript`), not the multi-GB
+toolchains. `apply_patches()` runs GNU patch with `check=True`, and GNU patch
+exits non-zero if any hunk fails, so reaching the end is the proof.
+
+7-Zip is found through
+`HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe`. Without
+it the tar extractor falls back to pure Python, which handles the Chromium
+`.tar.xz` (slowly) but not the `.tgz` and `.zip` Windows downloads.
+
+Note for rebases: `swarm-<name>.patch` files are regenerated, not hand-edited.
+`swarm/devutils/make_swarm_patches.py` holds the edits as anchored string
+replacements and refuses to run if an anchor has moved, which is a clearer
+failure than a rejected hunk.
 
 ## Rebasing onto the next upstream tag
 
