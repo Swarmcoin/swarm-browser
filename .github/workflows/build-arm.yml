@@ -1,15 +1,14 @@
-name: build-arm
+# SWARM: upstream build workflow kept as-is (name changed). arm is not a
+# SWARM release target yet, so it runs on manual dispatch only.
+name: swarm-build-arm
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-arm-${{ github.ref }}
+  group: swarm-build-arm-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

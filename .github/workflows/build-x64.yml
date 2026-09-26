@@ -1,4 +1,6 @@
-name: build-x64
+# SWARM: upstream build-x64 kept as-is (name changed, workflow_dispatch kept).
+# The staged design in reusable-build.yml is unchanged.
+name: swarm-build-x64
 on:
   workflow_dispatch:
   push:
@@ -9,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-x64-${{ github.ref }}
+  group: swarm-build-x64-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

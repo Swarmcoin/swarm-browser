@@ -18,9 +18,10 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    # SWARM: build under C:\swarm-browser instead of C:\ungoogled-chromium-windows.
     - name: Init
       shell: pwsh
-      run: Copy-Item -Path . -Destination 'C:\ungoogled-chromium-windows' -Recurse
+      run: Copy-Item -Path . -Destination 'C:\swarm-browser' -Recurse
 
     - name: Setup Stage
       shell: pwsh

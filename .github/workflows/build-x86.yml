@@ -1,15 +1,14 @@
-name: build-x86
+# SWARM: upstream build workflow kept as-is (name changed). x86 is not a
+# SWARM release target yet, so it runs on manual dispatch only.
+name: swarm-build-x86
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-x86-${{ github.ref }}
+  group: swarm-build-x86-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

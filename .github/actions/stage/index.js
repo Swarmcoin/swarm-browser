@@ -1,3 +1,6 @@
+// SWARM: staged build kept exactly as upstream designed it; only the
+// working directory (C:\\swarm-browser) and the package glob
+// (SWARM-Browser*) differ.
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as exec from '@actions/exec';
@@ -24,10 +27,10 @@ async function run() {
 
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
-        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\ungoogled-chromium-windows\\build'});
-        await exec.exec('7z', ['x', 'C:\\ungoogled-chromium-windows\\build\\artifacts.zip',
-            '-oC:\\ungoogled-chromium-windows\\build', '-y']);
-        await io.rmRF('C:\\ungoogled-chromium-windows\\build\\artifacts.zip');
+        await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\swarm-browser\\build'});
+        await exec.exec('7z', ['x', 'C:\\swarm-browser\\build\\artifacts.zip',
+            '-oC:\\swarm-browser\\build', '-y']);
+        await io.rmRF('C:\\swarm-browser\\build\\artifacts.zip');
     }
 
     const args = ['build.py', '--ci', '-j', '2']
@@ -36,16 +39,16 @@ async function run() {
     if (arm)
         args.push('--arm')
     await exec.exec('python', ['-m', 'pip', 'install', 'httplib2==0.22.0'], {
-        cwd: 'C:\\ungoogled-chromium-windows',
+        cwd: 'C:\\swarm-browser',
         ignoreReturnCode: true
     });
     const retCode = await exec.exec('python', args, {
-        cwd: 'C:\\ungoogled-chromium-windows',
+        cwd: 'C:\\swarm-browser',
         ignoreReturnCode: true
     });
     if (retCode === 0) {
         core.setOutput('finished', true);
-        const globber = await glob.create('C:\\ungoogled-chromium-windows\\build\\ungoogled-chromium*',
+        const globber = await glob.create('C:\\swarm-browser\\build\\SWARM-Browser*',
             {matchDirectories: false});
         let packageList = await globber.glob();
         const finalArtifactName = x86 ? 'chromium-x86' : (arm ? 'chromium-arm' : 'chromium');
@@ -57,7 +60,7 @@ async function run() {
             }
             try {
                 await artifact.uploadArtifact(finalArtifactName, packageList,
-                    'C:\\ungoogled-chromium-windows\\build', {retentionDays: 4, compressionLevel: 0});
+                    'C:\\swarm-browser\\build', {retentionDays: 4, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
@@ -67,8 +70,8 @@ async function run() {
         }
     } else if (retCode === BUILD_TIMEOUT_EXIT_CODE) {
         await new Promise(r => setTimeout(r, 5000));
-        await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
-            'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
+        await exec.exec('7z', ['a', '-tzip', 'C:\\swarm-browser\\artifacts.zip',
+            'C:\\swarm-browser\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
         for (let i = 0; i < 5; ++i) {
             try {
                 await artifact.deleteArtifact(artifactName);
@@ -76,8 +79,8 @@ async function run() {
                 // ignored
             }
             try {
-                await artifact.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
-                    'C:\\ungoogled-chromium-windows', {retentionDays: 4, compressionLevel: 0});
+                await artifact.uploadArtifact(artifactName, ['C:\\swarm-browser\\artifacts.zip'],
+                    'C:\\swarm-browser', {retentionDays: 4, compressionLevel: 0});
                 break;
             } catch (e) {
                 console.error(`Upload artifact failed: ${e}`);
