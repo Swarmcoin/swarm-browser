@@ -1,0 +1,79 @@
+--- a/chrome/app/theme/chromium/BRANDING
++++ b/chrome/app/theme/chromium/BRANDING
+@@ -1,10 +1,10 @@
+-COMPANY_FULLNAME=The Chromium Authors
+-COMPANY_SHORTNAME=The Chromium Authors
+-PRODUCT_FULLNAME=Chromium
+-PRODUCT_SHORTNAME=Chromium
+-PRODUCT_INSTALLER_FULLNAME=Chromium Installer
+-PRODUCT_INSTALLER_SHORTNAME=Chromium Installer
+-COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors. All rights reserved.
+-MAC_BUNDLE_ID=org.chromium.Chromium
++COMPANY_FULLNAME=Swarm
++COMPANY_SHORTNAME=Swarm
++PRODUCT_FULLNAME=SWARM Browser
++PRODUCT_SHORTNAME=SWARM Browser
++PRODUCT_INSTALLER_FULLNAME=SWARM Browser Installer
++PRODUCT_INSTALLER_SHORTNAME=SWARM Browser Installer
++COPYRIGHT=Copyright @LASTCHANGE_YEAR@ Swarm. Based on Chromium, Copyright @LASTCHANGE_YEAR@ The Chromium Authors. All rights reserved.
++MAC_BUNDLE_ID=green.swarm.browser
+ MAC_CREATOR_CODE=Cr24
+ MAC_TEAM_ID=
+--- a/chrome/install_static/chromium_install_modes.h
++++ b/chrome/install_static/chromium_install_modes.h
+@@ -17,14 +17,14 @@
+ 
+ // The brand-specific company name to be included as a component of the install
+ // and user data directory paths. May be empty if no such dir is to be used.
+-inline constexpr wchar_t kCompanyPathName[] = L"";
++inline constexpr wchar_t kCompanyPathName[] = L"Swarm";
+ 
+ // The brand-specific product name to be included as a component of the install
+ // and user data directory paths.
+-inline constexpr wchar_t kProductPathName[] = L"Chromium";
++inline constexpr wchar_t kProductPathName[] = L"SWARM Browser";
+ 
+ // The brand-specific safe browsing client name.
+-inline constexpr char kSafeBrowsingName[] = "chromium";
++inline constexpr char kSafeBrowsingName[] = "swarm";
+ 
+ // Note: This list of indices must be kept in sync with the brand-specific
+ // resource strings in chrome/installer/util/prebuild/create_string_rc.
+@@ -54,15 +54,15 @@
+         .logo_suffix = L"",  // No logo suffix for the primary install mode.
+         .app_guid =
+             L"",  // Empty app_guid since no integration with Google Update.
+-        .base_app_name = L"Chromium",              // A distinct base_app_name.
+-        .base_app_id = L"Chromium",                // A distinct base_app_id.
+-        .browser_prog_id_prefix = L"ChromiumHTM",  // Browser ProgID prefix.
++        .base_app_name = L"SWARM Browser",       // A distinct base_app_name.
++        .base_app_id = L"SWARMBrowser",          // A distinct base_app_id.
++        .browser_prog_id_prefix = L"SwarmHTM",   // Browser ProgID prefix.
+         .browser_prog_id_description =
+-            L"Chromium HTML Document",  // Browser ProgID description.
+-        .direct_launch_url_scheme = "chromium",
+-        .pdf_prog_id_prefix = L"ChromiumPDF",  // PDF ProgID prefix.
++            L"SWARM Browser HTML Document",  // Browser ProgID description.
++        .direct_launch_url_scheme = "swarmbrowser",
++        .pdf_prog_id_prefix = L"SwarmPDF",  // PDF ProgID prefix.
+         .pdf_prog_id_description =
+-            L"Chromium PDF Document",  // PDF ProgID description.
++            L"SWARM Browser PDF Document",  // PDF ProgID description.
+         .active_setup_guid =
+             L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup
+                                                         // GUID.
+--- a/chrome/browser/extensions/api/messaging/launch_context_win.cc
++++ b/chrome/browser/extensions/api/messaging/launch_context_win.cc
+@@ -62,8 +62,11 @@
+                               const std::wstring& host_name,
+                               std::wstring* result) {
+ #if BUILDFLAG(CHROMIUM_BRANDING)
++  // SWARM: keep this in sync with kCompanyPathName and
++  // kProductPathName in chrome/install_static/chromium_install_modes.h,
++  // which give install_static::GetRegistryPath() the same prefix.
+   static constexpr wchar_t kChromiumNativeMessagingRegistryKey[] =
+-      L"SOFTWARE\\Chromium\\NativeMessagingHosts";
++      L"SOFTWARE\\Swarm\\SWARM Browser\\NativeMessagingHosts";
+ 
+   // Try to read the path using the Chromium-specific registry for Chromium.
+   // If that fails, fallback to Chrome-specific registry key below.

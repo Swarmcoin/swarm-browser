@@ -1,0 +1,11 @@
+# SWARM Browser extra GN args.
+#
+# build.py appends this file after ungoogled-chromium/flags.gn and
+# flags.windows.gn, so anything set here wins over both.
+#
+# Deliberately empty for the first build: ungoogled-chromium's flags.gn already
+# removes the Google API keys, Safe Browsing, reporting, the variations seed,
+# Hangouts, remoting, mDNS and service discovery, and the SWARM privacy
+# defaults are patches (swarm/patches/swarm/swarm-privacy-defaults.patch)
+# rather than GN args. Every arg added here has to survive
+# `gn gen --fail-on-unused-args`, so add one at a time and prove it in CI.

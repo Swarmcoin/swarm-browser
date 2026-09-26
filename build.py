@@ -231,6 +231,23 @@ def main():
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
+        # SWARM: finally the SWARM layer (branding, privacy defaults, bundled
+        # component extensions), in its own series applied last, so that no
+        # upstream patch file is ever edited and rebasing onto the next
+        # ungoogled-chromium tag stays a plain submodule bump.
+        patches.apply_patches(
+            patches.generate_patches_from_series(_ROOT_DIR / 'swarm' / 'patches', resolve=True),
+            source_tree,
+            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+        )
+        # SWARM: copy the binary brand assets and the two bundled extensions
+        # into the tree (binary files cannot live in a unified diff).
+        subprocess.run([
+            sys.executable,
+            str(_ROOT_DIR / 'swarm' / 'install_swarm_assets.py'),
+            '--source-tree',
+            str(source_tree)
+        ], check=True)
 
         # Substitute domains
         domain_substitution_list = (_ROOT_DIR / 'ungoogled-chromium' / 'domain_substitution.list') if args.tarball else (_ROOT_DIR  / 'domain_substitution.list')
@@ -290,6 +307,10 @@ def main():
         if args.tarball:
             windows_flags += '\nchrome_pgo_phase=0\n'
         gn_flags += windows_flags
+        # SWARM: extra GN args appended last so that they win over both
+        # upstream files. See swarm/flags.swarm.gn.
+        gn_flags += '\n'
+        gn_flags += (_ROOT_DIR / 'swarm' / 'flags.swarm.gn').read_text(encoding=ENCODING)
         (source_tree / 'out/Default/args.gn').write_text(gn_flags, encoding=ENCODING)
 
     # Enter source tree to run build commands
