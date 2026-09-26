@@ -31,6 +31,14 @@ def _get_packaging_revision():
     revision_path = Path(__file__).resolve().parent / 'revision.txt'
     return revision_path.read_text(encoding=ENCODING).strip()
 
+# SWARM: the SWARM layer's own build number, bumped when the SWARM layer
+# changes without a Chromium version change. The upstream provenance
+# (ungoogled-chromium revision + Windows packaging revision) is recorded in
+# swarm/README.md and the release notes rather than in the file name.
+def _get_swarm_revision():
+    revision_path = Path(__file__).resolve().parent / 'swarm' / 'revision.txt'
+    return revision_path.read_text(encoding=ENCODING).strip()
+
 _cached_target_cpu = None
 
 def _get_target_cpu(build_outputs):
@@ -61,10 +69,11 @@ def main():
 
     build_outputs = Path('build/src/out/Default')
 
+    # SWARM: installer named SWARM-Browser-<chromium version>-<swarm build>-win-<arch>.exe
     shutil.copyfile('build/src/out/Default/mini_installer.exe',
-        'build/ungoogled-chromium_{}-{}.{}_installer_{}.exe'.format(
-            get_chromium_version(), _get_release_revision(),
-            _get_packaging_revision(), _get_target_cpu(build_outputs)))
+        'build/SWARM-Browser-{}-{}-win-{}.exe'.format(
+            get_chromium_version(), _get_swarm_revision(),
+            _get_target_cpu(build_outputs)))
 
     timestamp = None
     try:
@@ -73,9 +82,10 @@ def main():
     except FileNotFoundError:
         pass
 
-    output = Path('build/ungoogled-chromium_{}-{}.{}_windows_{}.zip'.format(
-        get_chromium_version(), _get_release_revision(),
-        _get_packaging_revision(), _get_target_cpu(build_outputs)))
+    # SWARM: portable zip named SWARM-Browser-<chromium version>-<swarm build>-win-<arch>.zip
+    output = Path('build/SWARM-Browser-{}-{}-win-{}.zip'.format(
+        get_chromium_version(), _get_swarm_revision(),
+        _get_target_cpu(build_outputs)))
 
     excluded_files = set([
         Path('mini_installer.exe'),
