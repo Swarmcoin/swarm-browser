@@ -1,0 +1,75 @@
+--- a/third_party/blink/common/features.cc
++++ b/third_party/blink/common/features.cc
+@@ -20,8 +20,8 @@
+ namespace blink::features {
+ 
+ BASE_FEATURE(kDisableLinkDrag, "DisableLinkDrag", base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kReducedSystemInfo, "ReducedSystemInfo", base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kRemoveClientHints, "RemoveClientHints", base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kReducedSystemInfo, "ReducedSystemInfo", base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kRemoveClientHints, "RemoveClientHints", base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kSpoofWebGLInfo, "SpoofWebGLInfo", base::FEATURE_DISABLED_BY_DEFAULT);
+ const char kSpoofWebGLRenderer[] = "renderer";
+ const char kSpoofWebGLVendor[] = "vendor";
+--- a/services/network/public/cpp/features.cc
++++ b/services/network/public/cpp/features.cc
+@@ -24,7 +24,7 @@
+ 
+ BASE_FEATURE(kNoCrossOriginReferrers,
+              "NoCrossOriginReferrers",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ 
+ // Enables the Accept-CH support disabler. If this feature is activated, Chrome
+--- a/chrome/browser/ui/browser_ui_prefs.cc
++++ b/chrome/browser/ui/browser_ui_prefs.cc
+@@ -220,8 +220,10 @@
+                                 false);
+ #endif
+ 
+-  registry->RegisterBooleanPref(
+-      prefs::kHttpsOnlyModeEnabled, false,
++  // SWARM: HTTPS-First mode on by default. It stays a normal profile
++  // pref, so the user can still turn it off in Settings.
++  registry->RegisterBooleanPref(
++      prefs::kHttpsOnlyModeEnabled, true,
+       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+   registry->RegisterBooleanPref(
+       prefs::kHttpsFirstBalancedMode, false,
+--- a/chrome/app/chrome_main_delegate.cc
++++ b/chrome/app/chrome_main_delegate.cc
+@@ -1101,6 +1101,33 @@
+ }
+ 
+ std::optional<int> ChromeMainDelegate::BasicStartupComplete() {
++  // SWARM: privacy defaults. Chromium has no "switch on by default"
++  // mechanism, so the SWARM defaults are appended at the earliest
++  // callback, before anything reads them, and only when the user has not
++  // set them. Chromium then maps them to prefs itself: see
++  // chrome/browser/prefs/chrome_command_line_pref_store.cc, which maps
++  // --no-pings to prefs::kEnableHyperlinkAuditing=false and
++  // --webrtc-ip-handling-policy to prefs::kWebRTCIPHandlingPolicy.
++  // --disable-search-engine-collection is read directly by the
++  // ungoogled-chromium patch of the same name.
++  // Canvas / client-rects / WebGL noise is deliberately NOT enabled
++  // here: it breaks ordinary sites and stays an opt-in flag.
++  {
++    base::CommandLine* swarm_command_line =
++        base::CommandLine::ForCurrentProcess();
++    if (!swarm_command_line->HasSwitch("no-pings")) {
++      swarm_command_line->AppendSwitch("no-pings");
++    }
++    if (!swarm_command_line->HasSwitch("webrtc-ip-handling-policy")) {
++      swarm_command_line->AppendSwitchASCII(
++          "webrtc-ip-handling-policy", "default_public_interface_only");
++    }
++    if (!swarm_command_line->HasSwitch(
++            "disable-search-engine-collection")) {
++      swarm_command_line->AppendSwitch(
++          "disable-search-engine-collection");
++    }
++  }
+ #if BUILDFLAG(IS_CHROMEOS)
+   ash::BootTimesRecorder::Get()->SaveChromeMainStats();
+ #endif
