@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Copyright 2026 Swarm. Placeholder UI: agent B2-wallet replaces the
+     contents of this folder. The folder path must stay swarm/extensions/wallet. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SWARM Wallet</title>
+<link rel="stylesheet" href="swarm.css">
+</head>
+<body class="swarm">
+  <header class="bar">
+    <span class="mark" aria-hidden="true"></span>
+    <h1>SWARM Wallet</h1>
+  </header>
+
+  <section class="balance" aria-live="polite">
+    <div class="label">Shielded balance</div>
+    <div class="amount" id="balance">&#11042;&#11042;&#11042;.&#11042;&#11042; SWM</div>
+    <button class="ghost" id="reveal" type="button">Reveal</button>
+  </section>
+
+  <section class="state">
+    <div class="dot" id="dot"></div>
+    <span id="status">Not connected to the wallet host</span>
+  </section>
+
+  <nav class="actions">
+    <button class="primary" id="receive" type="button" disabled>Receive</button>
+    <button class="primary" id="send" type="button" disabled>Send</button>
+  </nav>
+
+  <p class="note">
+    Placeholder build. Keys never live in the browser: this extension speaks to
+    the <code>swarm-wallet-host</code> process over native messaging.
+  </p>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+/* Copyright 2026 Swarm. SWARM style guide: Sora / Manrope / JetBrains Mono,
+   Hive Black #0A0908, Bone #F5EFE4, Hive Orange #FF8A1F. Fonts are declared by
+   name only; the bundled build has no network font fetch, so the stacks fall
+   back to system faces. */
+:root {
+  --hive-black: #0A0908;
+  --bone: #F5EFE4;
+  --hive-orange: #FF8A1F;
+  --muted: rgba(245, 239, 228, 0.58);
+  --line: rgba(245, 239, 228, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+body.swarm {
+  margin: 0;
+  width: 320px;
+  padding: 16px;
+  background: var(--hive-black);
+  color: var(--bone);
+  font-family: Manrope, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+
+.bar h1 {
+  margin: 0;
+  font-family: Sora, Manrope, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.mark {
+  width: 22px; height: 22px; flex: 0 0 22px;
+  border-radius: 6px;
+  background: var(--hive-orange);
+}
+
+.balance { border-top: 1px solid var(--line); padding-top: 14px; }
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.amount {
+  margin: 6px 0 10px;
+  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  font-size: 22px;
+  color: var(--hive-orange);
+}
+
+.state { display: flex; align-items: center; gap: 8px; margin: 14px 0; color: var(--muted); font-size: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.dot.live { background: var(--hive-orange); }
+
+.actions { display: flex; gap: 8px; margin-top: 4px; }
+
+button {
+  font: inherit;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button.primary {
+  flex: 1;
+  border: 0;
+  background: var(--hive-orange);
+  color: var(--hive-black);
+  font-weight: 600;
+}
+
+button.primary[disabled] { opacity: 0.35; cursor: default; }
+
+button.ghost {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--bone);
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.note {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+code { font-family: "JetBrains Mono", Consolas, monospace; }
+
+.rows { margin: 0; padding: 0; list-style: none; }
+.rows li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.rows li span:last-child { font-family: "JetBrains Mono", Consolas, monospace; color: var(--hive-orange); }
+
+label.toggle { display: flex; align-items: center; gap: 10px; margin: 14px 0; }

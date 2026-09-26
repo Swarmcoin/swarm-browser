@@ -1,0 +1,125 @@
+--- a/chrome/browser/browser_resources.grd
++++ b/chrome/browser/browser_resources.grd
+@@ -185,6 +185,11 @@
+       <include name="IDR_NETWORK_SPEECH_SYNTHESIS_MANIFEST_MV3" file="resources\network_speech_synthesis\mv3\manifest.json" type="BINDATA" />
+       <include name="IDR_READING_MODE_GDOCS_HELPER_MANIFEST" file="resources\reading_mode_gdocs_helper\manifest.json" type="BINDATA" />
+ 
++      <!-- SWARM: the two bundled SWARM component extensions. The folders
++           are copied in by swarm/install_swarm_assets.py. -->
++      <include name="IDR_SWARM_WALLET_MANIFEST" file="resources\swarm_wallet\manifest.json" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_MANIFEST" file="resources\swarm_rewards\manifest.json" type="BINDATA" />
++
+       <if expr="enable_pdf">
+         <include name="IDR_PDF_MANIFEST" file="resources\pdf\manifest.json" type="BINDATA" />
+       </if>
+--- a/chrome/browser/resources/component_extension_resources.grd
++++ b/chrome/browser/resources/component_extension_resources.grd
+@@ -21,6 +21,26 @@
+ 
+       <include name="IDR_READING_MODE_GDOC_HELPER_CONTENT_JS" file="reading_mode_gdocs_helper/content.js" type="BINDATA" />
+       <include name="IDR_READING_MODE_GDOC_HELPER_GDOCS_SCRIPT_JS" file="reading_mode_gdocs_helper/gdocs_script.js" type="BINDATA" />
++
++      <!-- SWARM: bundled SWARM Wallet and SWARM Rewards extension files.
++           The resource path prefix must match the root_directory passed to
++           ComponentLoader::Add() in component_loader.cc. -->
++      <include name="IDR_SWARM_WALLET_POPUP_HTML" file="swarm_wallet/popup.html" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_POPUP_JS" file="swarm_wallet/popup.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_BACKGROUND_JS" file="swarm_wallet/background.js" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_SWARM_CSS" file="swarm_wallet/swarm.css" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_WALLET_16_PNG" file="swarm_wallet/icons/wallet-16.png" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_WALLET_32_PNG" file="swarm_wallet/icons/wallet-32.png" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_WALLET_48_PNG" file="swarm_wallet/icons/wallet-48.png" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_ICONS_WALLET_128_PNG" file="swarm_wallet/icons/wallet-128.png" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_POPUP_HTML" file="swarm_rewards/popup.html" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_POPUP_JS" file="swarm_rewards/popup.js" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_BACKGROUND_JS" file="swarm_rewards/background.js" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_SWARM_CSS" file="swarm_rewards/swarm.css" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_16_PNG" file="swarm_rewards/icons/rewards-16.png" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_32_PNG" file="swarm_rewards/icons/rewards-32.png" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_48_PNG" file="swarm_rewards/icons/rewards-48.png" type="BINDATA" />
++      <include name="IDR_SWARM_REWARDS_ICONS_REWARDS_128_PNG" file="swarm_rewards/icons/rewards-128.png" type="BINDATA" />
+ 
+       <include name="IDR_GLIC_EXTENSION_MANIFEST" file="glic/extension/manifest.json" resource_path="glic_extension/manifest.json" type="BINDATA" />
+       <include name="IDR_GLIC_EXTENSION_BACKGROUND_JS" file="${root_gen_dir}/chrome/browser/resources/glic/extension/tsc/background.js" use_base_dir="false" resource_path="glic_extension/background.js" type="BINDATA" />
+--- a/chrome/browser/resources/BUILD.gn
++++ b/chrome/browser/resources/BUILD.gn
+@@ -247,6 +247,25 @@
+       "network_speech_synthesis/tts_extension.js",
+       "reading_mode_gdocs_helper/content.js",
+       "reading_mode_gdocs_helper/gdocs_script.js",
++      # SWARM: bundled SWARM extensions.
++      "swarm_wallet/manifest.json",
++      "swarm_wallet/popup.html",
++      "swarm_wallet/popup.js",
++      "swarm_wallet/background.js",
++      "swarm_wallet/swarm.css",
++      "swarm_wallet/icons/wallet-16.png",
++      "swarm_wallet/icons/wallet-32.png",
++      "swarm_wallet/icons/wallet-48.png",
++      "swarm_wallet/icons/wallet-128.png",
++      "swarm_rewards/manifest.json",
++      "swarm_rewards/popup.html",
++      "swarm_rewards/popup.js",
++      "swarm_rewards/background.js",
++      "swarm_rewards/swarm.css",
++      "swarm_rewards/icons/rewards-16.png",
++      "swarm_rewards/icons/rewards-32.png",
++      "swarm_rewards/icons/rewards-48.png",
++      "swarm_rewards/icons/rewards-128.png",
+       "$root_gen_dir/chrome/browser/resources/glic/extension/tsc/background.js",
+     ]
+ 
+--- a/chrome/browser/extensions/component_loader.h
++++ b/chrome/browser/extensions/component_loader.h
+@@ -217,6 +217,9 @@
+ 
+   void AddContextualTasksExtension();
+ 
++  // SWARM: the two bundled SWARM component extensions.
++  void AddSwarmExtensions();
++
+   void AddWithNameAndDescription(int manifest_resource_id,
+                                  const base::FilePath& root_directory,
+                                  const std::string& name_string,
+--- a/chrome/browser/extensions/component_loader.cc
++++ b/chrome/browser/extensions/component_loader.cc
+@@ -447,6 +447,18 @@
+   }
+ }
+ 
++// SWARM: SWARM Wallet and SWARM Rewards are bundled as component
++// extensions. Their ids are fixed by the "key" field in their manifests
++// and are recorded in swarm/README.md. The folders under
++// chrome/browser/resources are put there by swarm/install_swarm_assets.py
++// and turned into resources by component_extension_resources.grd.
++void ComponentLoader::AddSwarmExtensions() {
++  Add(IDR_SWARM_WALLET_MANIFEST,
++      base::FilePath(FILE_PATH_LITERAL("swarm_wallet")));
++  Add(IDR_SWARM_REWARDS_MANIFEST,
++      base::FilePath(FILE_PATH_LITERAL("swarm_rewards")));
++}
++
+ void ComponentLoader::AddWebStoreApp() {
+ #if BUILDFLAG(IS_CHROMEOS)
+   if (!IsNormalSession()) {
+@@ -597,6 +609,8 @@
+   }
+ 
+   if (!skip_session_components) {
++    // SWARM: bundled SWARM Wallet and SWARM Rewards.
++    AddSwarmExtensions();
+ #if BUILDFLAG(IS_CHROMEOS)
+     Add(IDR_ECHO_MANIFEST,
+         base::FilePath(FILE_PATH_LITERAL("/usr/share/chromeos-assets/echo")));
+--- a/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
++++ b/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
+@@ -100,6 +100,9 @@
+     case IDR_NETWORK_SPEECH_SYNTHESIS_MANIFEST:
+     case IDR_NETWORK_SPEECH_SYNTHESIS_MANIFEST_MV3:
+     case IDR_READING_MODE_GDOCS_HELPER_MANIFEST:
++    // SWARM: the two bundled SWARM component extensions.
++    case IDR_SWARM_REWARDS_MANIFEST:
++    case IDR_SWARM_WALLET_MANIFEST:
+     case IDR_WEBSTORE_MANIFEST:
+ 
+ #if BUILDFLAG(IS_CHROMEOS)

@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Copyright 2026 Swarm. Placeholder UI. Rewards economics are an open owner
+     decision (D3/D4 in docs/SWARM-BROWSER-PLAN.md); this build ships plumbing
+     only and says so. No referral tiers of any kind. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SWARM Rewards</title>
+<link rel="stylesheet" href="swarm.css">
+</head>
+<body class="swarm">
+  <header class="bar">
+    <span class="mark" aria-hidden="true"></span>
+    <h1>SWARM Rewards</h1>
+  </header>
+
+  <label class="toggle">
+    <input type="checkbox" id="optin">
+    <span>Take part in SWARM Rewards</span>
+  </label>
+
+  <ul class="rows">
+    <li><span>Linked wallet</span><span id="wallet">none</span></li>
+    <li><span>Earned this period</span><span id="earned">0.00 SWM</span></li>
+  </ul>
+
+  <nav class="actions">
+    <button class="primary" id="link" type="button" disabled>Link wallet</button>
+    <button class="primary" id="claim" type="button" disabled>Claim</button>
+  </nav>
+
+  <p class="note">
+    Rewards are not live yet. Nothing about your browsing ever leaves this
+    device: matching happens locally and a claim is a single anonymous message.
+  </p>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
