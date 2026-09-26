@@ -324,10 +324,31 @@ python swarm/devutils/check_syntax.py         # parse everything we add
 ```
 
 `prepare_and_verify.py` reproduces `build.py --tarball` up to (and including)
-the asset copy and stops before any compilation. It fetches only the one
-Windows download a patch actually touches (`typescript`), not the multi-GB
-toolchains. `apply_patches()` runs GNU patch with `check=True`, and GNU patch
-exits non-zero if any hunk fails, so reaching the end is the proof.
+the asset copy and stops before any compilation. It builds its tree in
+`build/verify/chromium-<version>/`, leaving `build/src` alone, and fetches only
+the one Windows download a patch actually touches (`typescript`), not the
+multi-GB toolchains. `apply_patches()` runs GNU patch with `check=True`, and
+GNU patch exits non-zero if any hunk fails, so reaching the end is the proof.
+
+Pass that tree to `check_syntax.py` as an argument and it will parse the
+patched `.grd` files and the installed manifests too:
+
+```
+python swarm/devutils/check_syntax.py build/verify/chromium-153.0.8010.52
+```
+
+`prepare_and_verify.py` drives 7-Zip directly rather than going through
+`downloads.unpack_downloads`, and deliberately does not rename the extracted
+`chromium-<version>/` directory up a level. That rename is the one step in the
+pipeline that needs exclusive access to a directory Windows Defender has just
+finished writing 566,000 files into, and it fails with `WinError 5` often
+enough to matter. Nothing downstream cares: every patch is applied with
+`-d <tree>`.
+
+`build/` is ignored by git and is entirely rebuildable. A prepared tree is
+about 8.4 GB over 566,000 files; `build/download_cache` is about 1.8 GB.
+Deleting a tree costs only the time to extract another; deleting the cache also
+costs the download.
 
 7-Zip is found through
 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\7zFM.exe`. Without
