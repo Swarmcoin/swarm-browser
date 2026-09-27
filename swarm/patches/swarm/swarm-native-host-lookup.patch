@@ -1,0 +1,63 @@
+--- a/chrome/browser/extensions/api/messaging/launch_context_win.cc
++++ b/chrome/browser/extensions/api/messaging/launch_context_win.cc
+@@ -15,11 +15,13 @@
+ #include "base/containers/span.h"
+ #include "base/files/file.h"
+ #include "base/files/file_path.h"
++#include "base/files/file_util.h"  // SWARM
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+ #include "base/location.h"
+ #include "base/logging.h"
+ #include "base/numerics/safe_conversions.h"
++#include "base/path_service.h"  // SWARM
+ #include "base/process/launch.h"
+ #include "base/process/process.h"
+ #include "base/strings/strcat.h"
+@@ -176,6 +178,32 @@
+       options);
+ }
+ 
++// SWARM: the manifest of a native messaging host shipped inside the SWARM
++// Browser package. Such a host has no installer, so nothing writes it to the
++// registry; it is simply next to chrome.exe, at
++// <directory of chrome.exe>\swarm\hosts\<host name>.json.
++//
++// The host name arrives from an extension, so it is checked against the
++// character set Chromium's own host names use before it is ever turned into a
++// path: here a name becomes a file name, and it must not be able to become a
++// directory traversal.
++base::FilePath FindSwarmBundledManifest(const std::string& host_name) {
++  if (host_name.empty() ||
++      host_name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789._") !=
++          std::string::npos ||
++      host_name.find("..") != std::string::npos) {
++    return base::FilePath();
++  }
++  base::FilePath exe_dir;
++  if (!base::PathService::Get(base::DIR_EXE, &exe_dir)) {
++    return base::FilePath();
++  }
++  base::FilePath manifest_path = exe_dir.Append(FILE_PATH_LITERAL("swarm"))
++                                     .Append(FILE_PATH_LITERAL("hosts"))
++                                     .AppendASCII(host_name + ".json");
++  return base::PathExists(manifest_path) ? manifest_path : base::FilePath();
++}
++
+ }  // namespace
+ 
+ // static
+@@ -196,6 +224,13 @@
+   }
+ 
+   if (!found) {
++    // SWARM: a host bundled with the browser needs no registry entry and
++    // no install step. The registry is still tried first, so a host the
++    // user installed overrides the bundled one.
++    base::FilePath swarm_bundled = FindSwarmBundledManifest(host_name);
++    if (!swarm_bundled.empty()) {
++      return swarm_bundled;
++    }
+     error_message =
+         "Native messaging host " + host_name + " is not registered.";
+     return base::FilePath();

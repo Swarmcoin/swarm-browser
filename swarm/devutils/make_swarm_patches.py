@@ -177,6 +177,86 @@ def edit_launch_context_win(text, path):
                path)
 
 
+# ------------------------------------------------- 1b. bundled native hosts
+# A second, separate patch on the same file. It is its own patch because it is
+# a different decision from the branding one: branding renames the registry key
+# SWARM reads, this one lets SWARM find a host that is not in the registry at
+# all. The two hunks sit far apart in the file, so applying them in series
+# costs GNU patch nothing but a line offset.
+SWARM_BUNDLED_HOST_HELPER = '''// SWARM: the manifest of a native messaging host shipped inside the SWARM
+// Browser package. Such a host has no installer, so nothing writes it to the
+// registry; it is simply next to chrome.exe, at
+// <directory of chrome.exe>\\swarm\\hosts\\<host name>.json.
+//
+// The host name arrives from an extension, so it is checked against the
+// character set Chromium's own host names use before it is ever turned into a
+// path: here a name becomes a file name, and it must not be able to become a
+// directory traversal.
+base::FilePath FindSwarmBundledManifest(const std::string& host_name) {
+  if (host_name.empty() ||
+      host_name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789._") !=
+          std::string::npos ||
+      host_name.find("..") != std::string::npos) {
+    return base::FilePath();
+  }
+  base::FilePath exe_dir;
+  if (!base::PathService::Get(base::DIR_EXE, &exe_dir)) {
+    return base::FilePath();
+  }
+  base::FilePath manifest_path = exe_dir.Append(FILE_PATH_LITERAL("swarm"))
+                                     .Append(FILE_PATH_LITERAL("hosts"))
+                                     .AppendASCII(host_name + ".json");
+  return base::PathExists(manifest_path) ? manifest_path : base::FilePath();
+}
+
+'''
+
+
+def edit_launch_context_win_bundled(text, path):
+    """Look next to chrome.exe when the registry has no entry for the host."""
+    text = sub(text,
+               '#include "base/files/file_path.h"\n',
+               '#include "base/files/file_path.h"\n'
+               '#include "base/files/file_util.h"  // SWARM\n',
+               path)
+    text = sub(text,
+               '#include "base/numerics/safe_conversions.h"\n',
+               '#include "base/numerics/safe_conversions.h"\n'
+               '#include "base/path_service.h"  // SWARM\n',
+               path)
+    text = sub(text,
+               '}  // namespace\n'
+               '\n'
+               '// static\n'
+               'base::FilePath LaunchContext::FindManifest(',
+               SWARM_BUNDLED_HOST_HELPER +
+               '}  // namespace\n'
+               '\n'
+               '// static\n'
+               'base::FilePath LaunchContext::FindManifest(',
+               path)
+    text = sub(text,
+               '  if (!found) {\n'
+               '    error_message =\n'
+               '        "Native messaging host " + host_name + " is not registered.";\n'
+               '    return base::FilePath();\n'
+               '  }\n',
+               '  if (!found) {\n'
+               '    // SWARM: a host bundled with the browser needs no registry entry and\n'
+               '    // no install step. The registry is still tried first, so a host the\n'
+               '    // user installed overrides the bundled one.\n'
+               '    base::FilePath swarm_bundled = FindSwarmBundledManifest(host_name);\n'
+               '    if (!swarm_bundled.empty()) {\n'
+               '      return swarm_bundled;\n'
+               '    }\n'
+               '    error_message =\n'
+               '        "Native messaging host " + host_name + " is not registered.";\n'
+               '    return base::FilePath();\n'
+               '  }\n',
+               path)
+    return text
+
+
 # -------------------------------------------------------- 2. privacy defaults
 def edit_blink_features(text, path):
     text = sub(text,
@@ -383,6 +463,12 @@ PATCHES = {
         'tracing_service_idl.idl': edit_tracing_service_idl,
         'chrome/browser/extensions/api/messaging/launch_context_win.cc':
             edit_launch_context_win,
+    },
+    # Applied after swarm-branding.patch, which edits the same file a hundred
+    # lines earlier; GNU patch absorbs the offset.
+    'swarm-native-host-lookup.patch': {
+        'chrome/browser/extensions/api/messaging/launch_context_win.cc':
+            edit_launch_context_win_bundled,
     },
     'swarm-privacy-defaults.patch': {
         'third_party/blink/common/features.cc': edit_blink_features,

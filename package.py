@@ -13,6 +13,7 @@ if sys.version_info.major < 3:
     raise RuntimeError('Python 3 is required for this script.')
 
 import argparse
+import itertools
 import os
 import platform
 from pathlib import Path
@@ -21,6 +22,13 @@ import shutil
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
 import filescfg
 from _common import ENCODING, get_chromium_version
+sys.path.pop(0)
+
+# SWARM: the bundled native messaging host (swarm/hosts/) is installed into the
+# build output and then packaged, so the browser ships with the wallet host and
+# needs no separate install step.
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'swarm'))
+from install_swarm_assets import install_bundled_host
 sys.path.pop(0)
 
 def _get_release_revision():
@@ -69,6 +77,14 @@ def main():
 
     build_outputs = Path('build/src/out/Default')
 
+    # SWARM: put swarm/hosts/{green.swarm.wallet_host.json,
+    # swarm-wallet-host.exe, native.node} next to chrome.exe in the build
+    # output, before anything is packaged. Skipped with a message when the host
+    # has not been built. The mini_installer takes its file list from
+    # chrome/installer/mini_installer/chrome.release, so these three reach the
+    # portable zip today and the installer only once that list is patched too.
+    host_files = install_bundled_host(build_outputs)
+
     # SWARM: installer named SWARM-Browser-<chromium version>-<swarm build>-win-<arch>.exe
     shutil.copyfile('build/src/out/Default/mini_installer.exe',
         'build/SWARM-Browser-{}-{}-win-{}.exe'.format(
@@ -96,8 +112,12 @@ def main():
     files_generator = filescfg.filescfg_generator(
         Path('build/src/chrome/tools/build/win/FILES.cfg'),
         build_outputs, args.cpu_arch, excluded_files)
+    # SWARM: FILES.cfg is upstream's and knows nothing about swarm/hosts, so
+    # the host files are appended to the same iterator of build-output-relative
+    # paths rather than by editing a Chromium file.
     filescfg.create_archive(
-        files_generator, tuple(), build_outputs, output, timestamp)
+        itertools.chain(files_generator, host_files),
+        tuple(), build_outputs, output, timestamp)
 
 if __name__ == '__main__':
     main()

@@ -1,3 +1,4 @@
 swarm/swarm-branding.patch
+swarm/swarm-native-host-lookup.patch
 swarm/swarm-privacy-defaults.patch
 swarm/swarm-component-extensions.patch
