@@ -8,7 +8,7 @@ The rule is simple and it is the whole point of the layout:
 > `build.py` and `package.py`, every one of them marked `# SWARM`.
 
 That keeps a rebase onto the next Chromium release a submodule bump plus a
-re-check of this layer's own 20 hunks, instead of a merge across ungoogled's
+re-check of this layer's own 23 hunks, instead of a merge across ungoogled's
 several hundred.
 
 Upstream provenance of this checkout:
@@ -30,6 +30,7 @@ the root of the repository.
 swarm/
   patches/series                       third patch series, applied last
   patches/swarm/swarm-branding.patch
+  patches/swarm/swarm-native-host-lookup.patch
   patches/swarm/swarm-privacy-defaults.patch
   patches/swarm/swarm-component-extensions.patch
   brand/render_icons.py                re-cuts the SWARM mark into Chromium's icon set
@@ -37,21 +38,26 @@ swarm/
   extensions/wallet/                   bundled SWARM Wallet (copied from its own repo)
   extensions/rewards/                  bundled SWARM Rewards component extension
   devutils/                            regenerate the series, verify it, parse-check it
-  install_swarm_assets.py              copies icons + extensions into build/src
+  install_swarm_assets.py              copies icons + extensions into build/src,
+                                       and the built wallet host into the build output
   flags.swarm.gn                       extra GN args, appended last
   revision.txt                         the SWARM layer's build number
 ```
 
-And the four marked hooks outside it:
+There is deliberately no `swarm/hosts/` in the source tree: it is a **build
+output** directory. See **The bundled wallet host** below.
+
+And the five marked hooks outside it:
 
 | File | `# SWARM` change |
 | --- | --- |
 | `build.py` | apply `swarm/patches` after the two upstream series |
 | `build.py` | run `swarm/install_swarm_assets.py` after patching |
 | `build.py` | append `swarm/flags.swarm.gn` to `out/Default/args.gn` |
+| `package.py` | call `install_bundled_host()` on `out/Default` before packaging |
 | `package.py` | name the outputs `SWARM-Browser-<chromium>-<swarm>-win-<arch>.{exe,zip}` |
 
-## The three patches
+## The four patches
 
 ### `swarm-branding.patch` (5 files, 9 hunks)
 
@@ -161,6 +167,43 @@ The values themselves live in `swarm-branding.patch` and in
 `uuid.uuid4()`. They are identifiers, not secrets, but they are SWARM's: do not
 copy them into another product.
 
+### `swarm-native-host-lookup.patch` (1 file, 3 hunks)
+
+`chrome/browser/extensions/api/messaging/launch_context_win.cc` again — which
+is why the series applies this patch **second, directly after the branding
+patch**: both touch that file, and the branding patch is what moves the
+registry literal the lookup below falls through from.
+
+The problem it solves: the wallet host is shipped *inside* the browser package,
+so at the moment an extension first asks for it nothing has run an installer and
+nothing has written `HKCU\Software\Swarm\SWARM Browser\NativeMessagingHosts`.
+A portable zip has no install step at all. Upstream Chromium has no concept of a
+native messaging host that travels with the browser: `GetManifestPath` looks in
+the registry and, failing that, reports *"Native messaging host … is not
+registered."*
+
+The patch adds `FindSwarmBundledManifest()` and calls it in exactly that
+`if (!found)` branch, so the order is:
+
+1. `HKCU`, then `HKLM`, 32-bit view then 64-bit (unchanged upstream behaviour);
+2. only if none of those hold the host, `<directory of chrome.exe>\swarm\hosts\<host name>.json`.
+
+A host the user installed therefore still wins over the bundled one, and a
+browser that is merely unzipped finds its wallet with nothing written to the
+registry and nothing left behind when the folder is deleted.
+
+**The host name comes from an extension, so it is validated before it becomes a
+path.** `FindSwarmBundledManifest` rejects an empty name, any character outside
+`[a-z0-9._]` (the set Chromium's own host names use), and any name containing
+`..`, before `AppendASCII` is reached. Without that check a host name is a
+directory traversal: the name is attacker-chosen relative to the browser, and
+this is the one place a string from an extension is turned into a file path.
+The function returns an empty `FilePath` unless `base::PathExists` succeeds, so
+a missing file falls back to the unchanged "not registered" error.
+
+The two extra includes are `base/files/file_util.h` (for `PathExists`) and
+`base/path_service.h` (for `DIR_EXE`).
+
 ### `swarm-privacy-defaults.patch` (4 files, 4 hunks)
 
 Two mechanisms, chosen per setting, and the reason for each:
@@ -223,6 +266,58 @@ The per-file lists in the grd and in `BUILD.gn` are **generated from the
 folders on disk** by `swarm/devutils/make_swarm_patches.py`, not typed out.
 The wallet is maintained in its own repository and copied in, so a hand-written
 list would go stale the first time it gained a file.
+
+## The bundled wallet host (`swarm/hosts/`)
+
+`swarm/hosts/` never appears in this repository, and that is the point: its
+three files are **build outputs**, not sources. `install_swarm_assets.py`
+copies them into the build output directory, next to `chrome.exe`, and
+`package.py` calls it before anything is archived.
+
+| | |
+| --- | --- |
+| Source of the files | `D:/swarm-work/host-dist` (`DEFAULT_HOST_DIST`, overridable with `--host-dist`) |
+| Destination | `<build output>/swarm/hosts/` — i.e. `build/src/out/Default/swarm/hosts/` |
+| Files | `green.swarm.wallet_host.json`, `swarm-wallet-host.exe`, `native.node` |
+| Built by | `browser/host/sea/build-sea.js` in the `privacy-wallet-browser` repository (Node 22 single executable application) |
+
+The exe is a Node 22 SEA holding the host's JavaScript; `native.node` is the
+wallet core it loads **from its own directory** — no registry key, no
+environment variable and no pointer file, so the three files move together.
+
+`install_bundled_host()` rewrites one field on the way through: the manifest's
+`path` becomes the bare name `swarm-wallet-host.exe`. On Windows Chromium
+resolves a relative host path against the manifest's own directory
+(`launch_context.cc`: `host_path = manifest_path.DirName().Append(host_path)`),
+which is what makes the folder relocatable — the copy in `build/`, the copy in
+the portable zip and a copy under `Program Files` are the same three files with
+no absolute path baked in.
+
+**It is skipped, not failed, when the host has not been built.** A missing
+`host-dist` prints where to build it and returns `[]`; the browser packages
+without a bundled wallet host. This is the opposite of the icon rule above,
+deliberately: an icon that vanished means Chromium renamed something and the
+build would silently ship a Chromium icon, while a host that was not built is
+the ordinary state of a tree on a machine that only builds the browser.
+
+**What reaches which artifact.** `package.py` hands the returned paths to
+`filescfg.create_archive`, so the three files are in the **portable zip**
+today. The `mini_installer` takes its file list from
+`chrome/installer/mini_installer/chrome.release`, which is *not* patched yet —
+until it is, the **installer does not carry the host**, and an installed SWARM
+Browser falls back to the registry path (i.e. it needs the wallet's own
+installer). That gap is real and is the next packaging task.
+
+Locally built at the time of writing (`D:/swarm-work/host-dist/SHA256SUMS.txt`):
+
+```
+692b798bc05f6ec43b4678a93daeb5477b73db410aa4505e99e4b41fe7192ec7  swarm-wallet-host.exe
+2dcd84bb378c127723f9eae3862d2d4fbe67e3333d2ceac6fd0b7d0c806bb912  native.node
+ccb707f2fb22dd7444d469dd284299fddb79b6dab7efd53a18a3df96e7b05887  green.swarm.wallet_host.json
+```
+
+Those are one machine's outputs, not a release: CI has never built the host,
+and nothing here is signed.
 
 ## Where the wallet comes from
 
@@ -367,7 +462,8 @@ failure than a rejected hunk.
 2. `git -C ungoogled-chromium checkout <matching ungoogled tag>`.
 3. Re-prepare a tree (tarball, prune, both upstream series).
 4. Apply `swarm/patches/series`. Every hunk that fails points at a file
-   Chromium moved; the three patches touch 15 files, all listed above.
+   Chromium moved; the four patches touch 15 files, all listed above
+   (`launch_context_win.cc` is touched by two of them, branding first).
 5. Re-run `python swarm/brand/render_icons.py` and
    `python swarm/install_swarm_assets.py --source-tree build/src --dry-run`;
    the dry run fails loudly if an icon destination disappeared.
