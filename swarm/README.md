@@ -264,8 +264,10 @@ three; `swarm/install_swarm_assets.py` holds the mapping.
 
 The per-file lists in the grd and in `BUILD.gn` are **generated from the
 folders on disk** by `swarm/devutils/make_swarm_patches.py`, not typed out.
-The wallet is maintained in its own repository and copied in, so a hand-written
-list would go stale the first time it gained a file.
+Both extensions are maintained in their own repository and copied in, so a
+hand-written list would go stale the first time either gained a file — and
+quietly: the browser would build and then fail to find a script at runtime.
+At the commit recorded below that is 38 files, 22 wallet and 16 rewards.
 
 ## The bundled wallet host (`swarm/hosts/`)
 
@@ -319,28 +321,44 @@ ccb707f2fb22dd7444d469dd284299fddb79b6dab7efd53a18a3df96e7b05887  green.swarm.wa
 Those are one machine's outputs, not a release: CI has never built the host,
 and nothing here is signed.
 
-## Where the wallet comes from
+## Where the two extensions come from
 
-`swarm/extensions/wallet` is not written here. It is a copy of
-`browser/extension` from the wallet repository:
+Neither extension is written here. Both are copies from the wallet repository,
+which is where they are developed and tested:
 
 | | |
 | --- | --- |
 | Repository | `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) |
 | Branch | `codex/browser-wallet-host` |
-| Commit | `a1bc7d605a0f6e0c2faf1f832d216a8f092f1b84` |
-| Copied | 21 files; `test/`, `package.json` and `node_modules` left behind |
+| Commit | `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
+| `browser/extension` | -> `swarm/extensions/wallet`, 22 files |
+| `browser/rewards-extension` | -> `swarm/extensions/rewards`, 16 files |
+| Left behind | `test/`, `package.json`, `node_modules` |
 
-`test/` and `package.json` exist only so the QR encoder can be run under
-`node --test` outside a browser; shipping them would put dead files in the pak.
+`test/` and `package.json` exist only so the pure modules (the QR encoder, the
+sender, the rewards ledger and link) can run under `node --test` outside a
+browser. They are the extensions' own test suites and they belong over there;
+shipping them would put dead files in the pak.
 
-Re-copying after the wallet changes upstream is: copy the folder, drop those
-three, re-run `make_swarm_patches.py` (which picks up any new files by itself)
-and `install_swarm_assets.py`. **The `key` in `manifest.json` must survive the
-copy**, and it does: the wallet repository and this one hold the same public
-key, so the id is `gmmgmodmgnigcgboccjelpgedejejfap` on both sides and the
-native messaging host's `allowed_origins`
-(`browser/install/green.swarm.wallet_host.json` there) already names it.
+Re-copying after either extension changes upstream is: copy the folder, drop
+those three, re-run `make_swarm_patches.py` (which reads the file lists off
+disk, so new files need no edit here) and `install_swarm_assets.py`.
+
+**The `key` in each `manifest.json` must survive the copy.** It does, and the
+two extensions check each other: each names the other's id in
+`externally_connectable`, which is how the wallet and the rewards counter talk,
+so a wrong key would break that link and not just the id. Both are recomputed
+from the copied manifests after every copy:
+
+* wallet `gmmgmodmgnigcgboccjelpgedejejfap` — also what the native messaging
+  host manifest (`browser/install/green.swarm.wallet_host.json` over there)
+  names in `allowed_origins`
+* rewards `gjmgdanakkpkgpmecnecoliifonlapnb`
+
+One file in the wallet, `icons/swarm-mark.svg`, is referenced by nothing; it is
+copied because the rule here is to take the folder as it stands rather than to
+curate it, and its absence would be the kind of difference that is hard to
+explain later.
 
 ## Extension ids
 
@@ -471,6 +489,6 @@ failure than a rejected hunk.
    native-messaging registry literal, and that the two IIDs in the header still
    match the `uuid()` lines in the two `.idl` files. All three are exactly the
    kind of thing Chromium moves between releases.
-7. If the wallet has moved on, re-copy `swarm/extensions/wallet` from its
-   repository (see **Where the wallet comes from**) and check the id again.
+7. If either extension has moved on, re-copy it from the wallet repository
+   (see **Where the two extensions come from**) and recompute both ids.
 8. Bump `swarm/revision.txt`.
