@@ -240,7 +240,7 @@ def main():
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
-        # SWARM: copy the binary brand assets and the two bundled extensions
+        # SWARM: copy the binary brand assets and the bundled extensions
         # into the tree (binary files cannot live in a unified diff).
         subprocess.run([
             sys.executable,

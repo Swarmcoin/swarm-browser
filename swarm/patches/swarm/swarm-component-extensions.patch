@@ -1,25 +1,27 @@
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -185,6 +185,11 @@
+@@ -185,6 +185,12 @@
        <include name="IDR_NETWORK_SPEECH_SYNTHESIS_MANIFEST_MV3" file="resources\network_speech_synthesis\mv3\manifest.json" type="BINDATA" />
        <include name="IDR_READING_MODE_GDOCS_HELPER_MANIFEST" file="resources\reading_mode_gdocs_helper\manifest.json" type="BINDATA" />
  
-+      <!-- SWARM: the two bundled SWARM component extensions. The folders
++      <!-- SWARM: the three bundled SWARM component extensions. The folders
 +           are copied in by swarm/install_swarm_assets.py. -->
 +      <include name="IDR_SWARM_WALLET_MANIFEST" file="resources\swarm_wallet\manifest.json" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_MANIFEST" file="resources\swarm_rewards\manifest.json" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_MANIFEST" file="resources\swarm_update\manifest.json" type="BINDATA" />
 +
        <if expr="enable_pdf">
          <include name="IDR_PDF_MANIFEST" file="resources\pdf\manifest.json" type="BINDATA" />
        </if>
 --- a/chrome/browser/resources/component_extension_resources.grd
 +++ b/chrome/browser/resources/component_extension_resources.grd
-@@ -21,6 +21,46 @@
+@@ -21,6 +21,67 @@
  
        <include name="IDR_READING_MODE_GDOC_HELPER_CONTENT_JS" file="reading_mode_gdocs_helper/content.js" type="BINDATA" />
        <include name="IDR_READING_MODE_GDOC_HELPER_GDOCS_SCRIPT_JS" file="reading_mode_gdocs_helper/gdocs_script.js" type="BINDATA" />
 +
-+      <!-- SWARM: bundled SWARM Wallet and SWARM Rewards extension files.
++      <!-- SWARM: bundled SWARM Wallet, SWARM Rewards and SWARM Update
++           extension files.
 +           The resource path prefix must match the root_directory passed to
 +           ComponentLoader::Add() in component_loader.cc. -->
 +      <include name="IDR_SWARM_WALLET_BACKGROUND_JS" file="swarm_wallet/background.js" type="BINDATA" />
@@ -58,12 +60,32 @@
 +      <include name="IDR_SWARM_REWARDS_POPUP_HTML" file="swarm_rewards/popup.html" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_REWARDS_HTML" file="swarm_rewards/rewards.html" type="BINDATA" />
 +      <include name="IDR_SWARM_REWARDS_SWARM_CSS" file="swarm_rewards/swarm.css" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_BACKGROUND_JS" file="swarm_update/background.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_FONTS_JETBRAINS_MONO_400_WOFF2" file="swarm_update/fonts/jetbrains-mono-400.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_FONTS_MANROPE_400_WOFF2" file="swarm_update/fonts/manrope-400.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_FONTS_MANROPE_600_WOFF2" file="swarm_update/fonts/manrope-600.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_FONTS_SORA_600_WOFF2" file="swarm_update/fonts/sora-600.woff2" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_ICONS_UPDATE_128_PNG" file="swarm_update/icons/update-128.png" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_ICONS_UPDATE_16_PNG" file="swarm_update/icons/update-16.png" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_ICONS_UPDATE_32_PNG" file="swarm_update/icons/update-32.png" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_ICONS_UPDATE_48_PNG" file="swarm_update/icons/update-48.png" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_LIB_CHECK_JS" file="swarm_update/lib/check.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_LIB_FEED_KEY_JS" file="swarm_update/lib/feed-key.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_LIB_FEED_JS" file="swarm_update/lib/feed.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_LIB_STATE_JS" file="swarm_update/lib/state.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_POPUP_HTML" file="swarm_update/popup.html" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_POPUP_JS" file="swarm_update/popup.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_SWARM_CSS" file="swarm_update/swarm.css" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_UI_JS" file="swarm_update/ui.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_UPDATE_HTML" file="swarm_update/update.html" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_UPDATE_JS" file="swarm_update/update.js" type="BINDATA" />
++      <include name="IDR_SWARM_UPDATE_VERSION_JSON" file="swarm_update/version.json" type="BINDATA" />
  
        <include name="IDR_GLIC_EXTENSION_MANIFEST" file="glic/extension/manifest.json" resource_path="glic_extension/manifest.json" type="BINDATA" />
        <include name="IDR_GLIC_EXTENSION_BACKGROUND_JS" file="${root_gen_dir}/chrome/browser/resources/glic/extension/tsc/background.js" use_base_dir="false" resource_path="glic_extension/background.js" type="BINDATA" />
 --- a/chrome/browser/resources/BUILD.gn
 +++ b/chrome/browser/resources/BUILD.gn
-@@ -247,6 +247,45 @@
+@@ -247,6 +247,66 @@
        "network_speech_synthesis/tts_extension.js",
        "reading_mode_gdocs_helper/content.js",
        "reading_mode_gdocs_helper/gdocs_script.js",
@@ -106,6 +128,27 @@
 +      "swarm_rewards/popup.html",
 +      "swarm_rewards/rewards.html",
 +      "swarm_rewards/swarm.css",
++      "swarm_update/manifest.json",
++      "swarm_update/background.js",
++      "swarm_update/fonts/jetbrains-mono-400.woff2",
++      "swarm_update/fonts/manrope-400.woff2",
++      "swarm_update/fonts/manrope-600.woff2",
++      "swarm_update/fonts/sora-600.woff2",
++      "swarm_update/icons/update-128.png",
++      "swarm_update/icons/update-16.png",
++      "swarm_update/icons/update-32.png",
++      "swarm_update/icons/update-48.png",
++      "swarm_update/lib/check.js",
++      "swarm_update/lib/feed-key.js",
++      "swarm_update/lib/feed.js",
++      "swarm_update/lib/state.js",
++      "swarm_update/popup.html",
++      "swarm_update/popup.js",
++      "swarm_update/swarm.css",
++      "swarm_update/ui.js",
++      "swarm_update/update.html",
++      "swarm_update/update.js",
++      "swarm_update/version.json",
        "$root_gen_dir/chrome/browser/resources/glic/extension/tsc/background.js",
      ]
  
@@ -115,7 +158,7 @@
  
    void AddContextualTasksExtension();
  
-+  // SWARM: the two bundled SWARM component extensions.
++  // SWARM: the three bundled SWARM component extensions.
 +  void AddSwarmExtensions();
 +
    void AddWithNameAndDescription(int manifest_resource_id,
@@ -123,13 +166,13 @@
                                   const std::string& name_string,
 --- a/chrome/browser/extensions/component_loader.cc
 +++ b/chrome/browser/extensions/component_loader.cc
-@@ -447,6 +447,18 @@
+@@ -447,6 +447,20 @@
    }
  }
  
-+// SWARM: SWARM Wallet and SWARM Rewards are bundled as component
-+// extensions. Their ids are fixed by the "key" field in their manifests
-+// and are recorded in swarm/README.md. The folders under
++// SWARM: SWARM Wallet, SWARM Rewards and SWARM Update are bundled as
++// component extensions. Their ids are fixed by the "key" field in their
++// manifests and are recorded in swarm/README.md. The folders under
 +// chrome/browser/resources are put there by swarm/install_swarm_assets.py
 +// and turned into resources by component_extension_resources.grd.
 +void ComponentLoader::AddSwarmExtensions() {
@@ -137,28 +180,31 @@
 +      base::FilePath(FILE_PATH_LITERAL("swarm_wallet")));
 +  Add(IDR_SWARM_REWARDS_MANIFEST,
 +      base::FilePath(FILE_PATH_LITERAL("swarm_rewards")));
++  Add(IDR_SWARM_UPDATE_MANIFEST,
++      base::FilePath(FILE_PATH_LITERAL("swarm_update")));
 +}
 +
  void ComponentLoader::AddWebStoreApp() {
  #if BUILDFLAG(IS_CHROMEOS)
    if (!IsNormalSession()) {
-@@ -597,6 +609,8 @@
+@@ -597,6 +611,8 @@
    }
  
    if (!skip_session_components) {
-+    // SWARM: bundled SWARM Wallet and SWARM Rewards.
++    // SWARM: bundled SWARM Wallet, SWARM Rewards and SWARM Update.
 +    AddSwarmExtensions();
  #if BUILDFLAG(IS_CHROMEOS)
      Add(IDR_ECHO_MANIFEST,
          base::FilePath(FILE_PATH_LITERAL("/usr/share/chromeos-assets/echo")));
 --- a/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
 +++ b/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
-@@ -100,6 +100,9 @@
+@@ -100,6 +100,10 @@
      case IDR_NETWORK_SPEECH_SYNTHESIS_MANIFEST:
      case IDR_NETWORK_SPEECH_SYNTHESIS_MANIFEST_MV3:
      case IDR_READING_MODE_GDOCS_HELPER_MANIFEST:
-+    // SWARM: the two bundled SWARM component extensions.
++    // SWARM: the three bundled SWARM component extensions.
 +    case IDR_SWARM_REWARDS_MANIFEST:
++    case IDR_SWARM_UPDATE_MANIFEST:
 +    case IDR_SWARM_WALLET_MANIFEST:
      case IDR_WEBSTORE_MANIFEST:
  

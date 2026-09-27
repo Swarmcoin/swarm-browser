@@ -38,9 +38,13 @@ swarm/
   brand/icons/                         the rendered result (binary, copied in, not patched)
   extensions/wallet/                   bundled SWARM Wallet (copied from its own repo)
   extensions/rewards/                  bundled SWARM Rewards component extension
+  extensions/update/                   bundled SWARM Update: the daily signed update check
+  updates/                             make, sign and check the update feed (updates/README.md)
+  tests/update/                        node --test suites + Edge smoke test for SWARM Update
   devutils/                            regenerate the series, verify it, parse-check it
-  install_swarm_assets.py              copies icons + extensions into build/src,
-                                       and the built wallet host into the build output
+  install_swarm_assets.py              copies icons + extensions into build/src (stamping
+                                       SWARM Update's version.json), and the built wallet
+                                       host into the build output
   flags.swarm.gn                       extra GN args, appended last
   revision.txt                         the SWARM layer's build number
 ```
@@ -66,7 +70,7 @@ And the six marked hooks outside it:
 | `swarm-branding.patch` | 5 | 9 | SWARM name, install identity, native-messaging registry key |
 | `swarm-native-host-lookup.patch` | 1 | 3 | finds the bundled wallet host in the browser's own folders |
 | `swarm-privacy-defaults.patch` | 4 | 4 | privacy defaults compiled in |
-| `swarm-component-extensions.patch` | 6 | 7 | SWARM Wallet and SWARM Rewards as component extensions |
+| `swarm-component-extensions.patch` | 6 | 7 | SWARM Wallet, SWARM Rewards and SWARM Update as component extensions |
 | `swarm-installer-host.patch` | 1 | 1 | the installer packs the bundled wallet host |
 
 Applied in that order (`swarm/patches/series`), after both upstream series.
@@ -283,28 +287,32 @@ items 1 and 2.
 
 ### `swarm-component-extensions.patch` (6 files, 7 hunks)
 
-Bundles the two extensions the way Chromium bundles its own: manifests as
+Bundles the three extensions the way Chromium bundles its own: manifests as
 resources in `chrome/browser/browser_resources.grd`, the rest of the files in
 `chrome/browser/resources/component_extension_resources.grd` (whose generated
 map `ChromeComponentExtensionResourceManager` uses to serve
 `<extension>/<path>` out of the pak, so nothing is written to disk), the grit
 inputs in `chrome/browser/resources/BUILD.gn`, an `AddSwarmExtensions()` in
 `component_loader.{h,cc}` called from
-`AddDefaultComponentExtensionsWithBackgroundPages`, and the two new IDRs in
+`AddDefaultComponentExtensionsWithBackgroundPages`, and the three new IDRs in
 `component_extensions_allowlist/allowlist.cc` — without which
 `IsComponentExtensionAllowlisted(int)` hits `NOTREACHED()`.
 
 The folder name under `chrome/browser/resources` (`swarm_wallet`,
-`swarm_rewards`) is the `root_directory` passed to `ComponentLoader::Add()`
-*and* the resource-path prefix in the grd. Change one and you must change all
-three; `swarm/install_swarm_assets.py` holds the mapping.
+`swarm_rewards`, `swarm_update`) is the `root_directory` passed to
+`ComponentLoader::Add()` *and* the resource-path prefix in the grd. Change one
+and you must change all three; `swarm/install_swarm_assets.py` holds the
+mapping.
 
 The per-file lists in the grd and in `BUILD.gn` are **generated from the
 folders on disk** by `swarm/devutils/make_swarm_patches.py`, not typed out.
-Both extensions are maintained in their own repository and copied in, so a
-hand-written list would go stale the first time either gained a file — and
-quietly: the browser would build and then fail to find a script at runtime.
-At the commit recorded below that is 38 files, 22 wallet and 16 rewards.
+The wallet and rewards extensions are maintained in their own repository and
+copied in, so a hand-written list would go stale the first time either gained
+a file — and quietly: the browser would build and then fail to find a script
+at runtime. That is 59 files: 22 wallet, 16 rewards and 21 update.
+`check_syntax.py`, given a prepared tree, compares each folder with its grd
+entries, its `BUILD.gn` inputs and its copy in the tree, file for file; the
+one file allowed to differ is SWARM Update's stamped `version.json`.
 
 ### `swarm-installer-host.patch` (1 file, 1 hunk)
 
@@ -426,10 +434,14 @@ Those are one machine's outputs, not a release: CI has never built the host,
 and nothing here is signed. (The manifest inside the build output differs from
 the one in `host-dist` by its rewritten `path`.)
 
-## Where the two extensions come from
+## Where the extensions come from
 
-Neither extension is written here. Both are copies from the wallet repository,
-which is where they are developed and tested:
+SWARM Update is written here: `swarm/extensions/update`, with its tests in
+`swarm/tests/update` (outside the folder, which ships as it stands) and its
+tools in `swarm/updates`. See **The update channel** below.
+
+SWARM Wallet and SWARM Rewards are not written here. Both are copies from the
+wallet repository, which is where they are developed and tested:
 
 | | |
 | --- | --- |
@@ -475,18 +487,83 @@ each hex nibble mapped `0-f` to `a-p` (Chromium `crx_file/id_util.cc`).
 | --- | --- | --- |
 | SWARM Wallet | `swarm/extensions/wallet` -> `swarm_wallet` | `gmmgmodmgnigcgboccjelpgedejejfap` |
 | SWARM Rewards | `swarm/extensions/rewards` -> `swarm_rewards` | `gjmgdanakkpkgpmecnecoliifonlapnb` |
+| SWARM Update | `swarm/extensions/update` -> `swarm_update` | `locbhnoahhmjhcjpndjmnfmnfekhdode` |
 
 The wallet id is what the native messaging host manifest must list in
 `allowed_origins` as `chrome-extension://gmmgmodmgnigcgboccjelpgedejejfap/`.
 
 **The matching private keys are not in this repository.** They were generated
-locally and left outside the tree; only the public key is needed to build, and
-a component extension is never signed into a `.crx`. If the owner ever wants to
-publish either extension to a store, generate the store key there and expect a
-different id.
+locally and left outside the tree (`D:/swarm-work/keys/swarm-wallet.pem`,
+`swarm-rewards.pem`, `swarm-update.pem`, each RSA 2048 from `openssl genrsa`);
+only the public key is needed to build, and a component extension is never
+signed into a `.crx`. If the owner ever wants to publish an extension to a
+store, generate the store key there and expect a different id.
+
+These are the keys that fix the extension *ids*. The key that signs the
+*update feed* is a different thing, Ed25519, and has its own section below.
 
 The folder path, the `key` and therefore the id must not change when the wallet
 is re-copied from its own repository.
+
+## The update channel (SWARM Update)
+
+v0 policy, from `docs/SWARM-BROWSER-PLAN.md` Layer 5: **check daily, offer the
+installer, no silent download, no auto-install.** The full description, the
+feed format and the owner's release steps are in `swarm/updates/README.md`.
+
+* Once a day (`chrome.alarms`; the first check a few minutes after first
+  start) the service worker fetches `https://swarm.green/browser/updates.json`
+  with `credentials: "omit"`, `cache: "no-store"`, no referrer, no query
+  string and `Accept-Language: *`. Host permission and CSP `connect-src`:
+  `https://swarm.green` only. Permissions: `alarms`, `notifications`,
+  `storage`. No `downloads`, no `tabs`, no content script.
+* The feed is `{"format":1,"payload":"<base64>","signature":"<base64>"}`, an
+  Ed25519 signature over exactly the payload bytes, checked with WebCrypto
+  against the public key(s) in `swarm/extensions/update/lib/feed-key.js`
+  before a byte of the payload is read. Refused: unsigned, tampered, signed by
+  another key, malformed, a `published` time earlier than the last accepted
+  one (rollback), an offer older than the running build (downgrade), a link
+  outside `https://github.com/Swarm-Official/` and `https://swarm.green/`.
+* A newer build means a notification, a badge on the toolbar icon and
+  `update.html`: the version, the download links, the SHA-256 to compare, the
+  sentence that nothing was downloaded and nothing will install itself, and
+  "Remind me tomorrow". The popup shows "You are on the latest version" /
+  "Checked <time>" / the offer.
+* The running build is `swarm_update/version.json`: the committed file is the
+  placeholder `{"chromium":"0.0.0.0","swarm":"0","channel":"dev"}`, and
+  `install_swarm_assets.py` stamps the tree's copy from
+  `ungoogled-chromium/chromium_version.txt` and `swarm/revision.txt` with
+  channel `release`. Only a `dev` copy may be pointed at another
+  `https://swarm.green/...` feed address (for the smoke test).
+
+**Verified in the Chromium 153.0.8010.52 tree**, since the extension depends
+on all three:
+
+* WebCrypto Ed25519 is on by default: `normalize_algorithm.cc` gates only
+  ChaCha20-Poly1305, ML-DSA and ML-KEM behind `WebCryptoPQC`, and
+  `components/webcrypto/algorithm_registry.cc` registers Ed25519
+  unconditionally. No ungoogled or Windows patch touches WebCrypto.
+* Reading `version.json` from the extension's own package works under
+  `connect-src https://swarm.green`: `chrome/common/chrome_content_client.cc`
+  registers `chrome-extension:` as a CSP-bypassing scheme.
+* `chrome.runtime.getPlatformInfo()` reports the architecture the browser was
+  compiled for (`components/update_client/update_query_params.cc`), so the x64
+  build asks for the `windows-x64` entry.
+
+**The feed key baked in today is a development key** (`dev-2026-09-27`,
+private half at `D:/swarm-work/keys/update-feed-dev.pem`). Every
+`install_swarm_assets.py` run prints a warning while that is so. Before any
+public release the owner makes the production key on their own machine
+(`node swarm/updates/gen-key.mjs --out <outside every repository>
+--label release-<date> --write-extension-key`, commit the changed
+`feed-key.js`) and publishes the signed feed as one static file,
+`browser/updates.json` in the website repository. Today that address
+answers 404, which the popup reports as "SWARM has not published an update
+list yet."
+
+Tests: `node --test "swarm/tests/update/*.test.mjs"` (99, no network) and
+`node swarm/tests/update/smoke-edge.mjs` (Edge with a disposable profile,
+34 checks; screenshots `D:/swarm-work/smoke/05-update-*`).
 
 ## Icons
 
@@ -522,8 +599,13 @@ hashes upstream's release assets) was removed for the same reason.
 `swarm-build-x86` and `swarm-build-arm` are manual-dispatch only: x64 is the
 only SWARM release target for now.
 
-**Nothing here has been run.** Creating the GitHub repository is owner decision
-D2 in `docs/SWARM-BROWSER-PLAN.md`.
+**What has run.** The repository is `Swarm-Official/swarm-browser`, branch
+`swarm-main`. At the time of writing (2026-09-27, 20:47 UTC) run
+`36287323142` is build 1, of `8996a54`, in progress, and run `36336652588`
+is build 2, of `84c2870`, pending; both were dispatched by hand. A full
+staged x64 build takes about 46 hours: ten real stages (upstream's last
+green run needed ten; stages 11–16 pass straight through), each about
+4.5 hours with the artifact hand-off.
 
 ## Building
 
@@ -608,5 +690,9 @@ is how revision 2 was regenerated.
    `base::DIR_MODULE` finds) and that `create_installer_archive.py` still
    skips a `chrome.release` entry that matches nothing.
 7. If either extension has moved on, re-copy it from the wallet repository
-   (see **Where the two extensions come from**) and recompute both ids.
-8. Bump `swarm/revision.txt`.
+   (see **Where the extensions come from**) and recompute both ids. SWARM
+   Update needs nothing here: its `version.json` is stamped from
+   `chromium_version.txt` and `revision.txt` on every build.
+8. Bump `swarm/revision.txt`. The update channel orders builds by Chromium
+   version and then by this number, so a release that does not raise one of
+   the two is invisible to installed browsers.
