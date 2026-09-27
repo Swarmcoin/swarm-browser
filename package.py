@@ -80,9 +80,10 @@ def main():
     # SWARM: put swarm/hosts/{green.swarm.wallet_host.json,
     # swarm-wallet-host.exe, native.node} next to chrome.exe in the build
     # output, before anything is packaged. Skipped with a message when the host
-    # has not been built. The mini_installer takes its file list from
-    # chrome/installer/mini_installer/chrome.release, so these three reach the
-    # portable zip today and the installer only once that list is patched too.
+    # has not been built. build.py already did this before ninja, because the
+    # mini_installer packs what chrome/installer/mini_installer/chrome.release
+    # lists at ninja time; here it leaves up-to-date files alone, covers a tree
+    # built before that hook existed, and returns the paths for the zip below.
     host_files = install_bundled_host(build_outputs)
 
     # SWARM: installer named SWARM-Browser-<chromium version>-<swarm build>-win-<arch>.exe

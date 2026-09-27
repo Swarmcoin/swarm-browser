@@ -6,7 +6,7 @@ Called by build.py right after swarm/patches has been applied. It exists
 because a unified diff cannot carry binary files (icons) and because copying a
 whole extension folder is far less brittle than a diff that adds every file.
 
-It does two things:
+It does three things:
 
 1. Branding assets: every file under swarm/brand/icons is written over the
    matching file in chrome/app/theme/chromium. Each destination must already
@@ -22,15 +22,19 @@ It does two things:
 3. Bundled native messaging host: the built swarm-wallet-host.exe, its wallet
    core and its manifest are copied into `swarm/hosts/` in the BUILD OUTPUT
    directory, not into the source tree -- they are shipped files, not sources.
+   build.py does this before ninja, because the mini_installer target packs
+   the files chrome.release lists at ninja time (swarm-installer-host.patch
+   adds swarm/hosts there); package.py does it again for the portable zip.
    swarm/patches/swarm/swarm-native-host-lookup.patch makes Chromium look
-   there when the registry has no entry for the host, so the packaged browser
-   needs no installer and writes nothing to HKCU. package.py puts the same
-   three files into the portable zip.
+   there -- next to chrome.dll, then next to chrome.exe -- when the registry
+   has no entry for the host, so the browser needs no separate host install
+   and writes nothing to HKCU.
 
     python swarm/install_swarm_assets.py --source-tree build/src [--dry-run]
     python swarm/install_swarm_assets.py --host-dest build/src/out/Default
 """
 import argparse
+import filecmp
 import json
 import shutil
 import sys
@@ -115,6 +119,11 @@ def install_bundled_host(dest_root, host_dist=None, dry_run=False):
     (launch_context.cc, `host_path = manifest_path.DirName().Append(host_path)`),
     which is what makes the folder relocatable -- the copy in build/, the copy
     in the zip and the copy under Program Files are all the same three files.
+
+    Idempotent: build.py calls this before every ninja run and package.py
+    again before packaging. A file that is already up to date is left alone,
+    so a new timestamp alone never makes ninja pack the installer again
+    (create_installer_archive.py lists the packed files in its depfile).
     """
     dist = Path(host_dist or DEFAULT_HOST_DIST)
     missing = [name for name in HOST_FILES if not (dist / name).is_file()]
@@ -130,14 +139,20 @@ def install_bundled_host(dest_root, host_dist=None, dry_run=False):
     written = []
     for name in HOST_FILES:
         out = dest / name
-        print(f'  host: {HOST_RELDIR.as_posix()}/{name}')
-        if not dry_run:
+        if name == HOST_MANIFEST_NAME:
+            manifest = json.loads((dist / name).read_text(encoding='utf-8'))
+            manifest['path'] = 'swarm-wallet-host.exe'
+            text = json.dumps(manifest, indent=2) + '\n'
+            current = out.is_file() and out.read_text(encoding='utf-8') == text
+        else:
+            current = out.is_file() and filecmp.cmp(dist / name, out,
+                                                    shallow=True)
+        print(f'  host: {HOST_RELDIR.as_posix()}/{name}'
+              + (' (up to date)' if current else ''))
+        if not dry_run and not current:
             dest.mkdir(parents=True, exist_ok=True)
             if name == HOST_MANIFEST_NAME:
-                manifest = json.loads((dist / name).read_text(encoding='utf-8'))
-                manifest['path'] = 'swarm-wallet-host.exe'
-                out.write_text(json.dumps(manifest, indent=2) + '\n',
-                               encoding='utf-8')
+                out.write_text(text, encoding='utf-8')
             else:
                 shutil.copy2(dist / name, out)
         written.append(HOST_RELDIR / name)
@@ -174,8 +189,8 @@ def main():
     if host_dest is not None and Path(host_dest).is_dir():
         install_bundled_host(host_dest, args.host_dist, args.dry_run)
     elif host_dest is not None:
-        print(f'  host: {host_dest} does not exist yet -- '
-              'package.py installs the host at packaging time.')
+        print(f'  host: {host_dest} does not exist yet -- build.py installs '
+              'the host there before ninja, package.py again before packaging.')
     return 0
 
 

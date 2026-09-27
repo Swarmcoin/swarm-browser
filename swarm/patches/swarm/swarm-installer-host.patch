@@ -1,0 +1,18 @@
+--- a/chrome/installer/mini_installer/chrome.release
++++ b/chrome/installer/mini_installer/chrome.release
+@@ -71,6 +71,15 @@
+ IwaKeyDistribution\iwa-key-distribution.pb: %(VersionDir)s\IwaKeyDistribution\
+ IwaKeyDistribution\manifest.json: %(VersionDir)s\IwaKeyDistribution\
+ 
++#
++# SWARM: the bundled SWARM Wallet native messaging host
++# (green.swarm.wallet_host.json, swarm-wallet-host.exe, native.node).
++# build.py copies it into swarm\hosts\ in the build output before ninja,
++# and the browser looks for it next to chrome.dll first. An entry that
++# matches nothing is skipped, so a build without the host still packs.
++#
++swarm\hosts\*.*: %(VersionDir)s\swarm\hosts\
++
+ [HIDPI]
+ chrome_200_percent.pak: %(VersionDir)s\
+ 

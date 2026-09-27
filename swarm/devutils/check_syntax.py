@@ -64,7 +64,9 @@ for p in sorted(ROOT.glob('.github/**/*.yml')):
 print('Python')
 for p in [ROOT / 'build.py', ROOT / 'package.py',
           ROOT / 'swarm' / 'install_swarm_assets.py',
-          ROOT / 'swarm' / 'brand' / 'render_icons.py']:
+          ROOT / 'swarm' / 'brand' / 'render_icons.py',
+          ROOT / 'swarm' / 'devutils' / 'make_swarm_patches.py',
+          ROOT / 'swarm' / 'devutils' / 'prepare_and_verify.py']:
     try:
         ast.parse(p.read_text(encoding='utf-8'), filename=str(p))
         ok('py', p.relative_to(ROOT))
@@ -157,6 +159,31 @@ if (SRC / 'chrome' / 'browser' / 'browser_resources.grd').is_file():
             ok('json', rel)
         except Exception as exc:  # noqa: BLE001
             bad('json', rel, exc)
+    # The installer's file list, read by the installer's own parser:
+    # Readconfig() from the tree's create_installer_archive.py (its module
+    # level only defines things), then the SWARM entry looked up the way
+    # CopySectionFilesToStagingDir does. No __pycache__ is left in the tree.
+    rel = 'chrome/installer/mini_installer/chrome.release'
+    try:
+        import importlib.util
+        script = (SRC / 'chrome' / 'tools' / 'build' / 'win' /
+                  'create_installer_archive.py')
+        spec = importlib.util.spec_from_file_location(
+            'create_installer_archive', script)
+        archive = importlib.util.module_from_spec(spec)
+        sys.dont_write_bytecode = True
+        spec.loader.exec_module(archive)
+        config = archive.Readconfig(str(SRC / rel), '1.2.3.4')
+        key = 'swarm\\hosts\\*.*'
+        if key not in config.options('GENERAL'):
+            raise ValueError(f'no {key} entry in [GENERAL]')
+        dest = config.get('GENERAL', key)
+        want = config.get('GENERAL', 'versiondir') + '\\swarm\\hosts\\'
+        if dest != want:
+            raise ValueError(f'{key} goes to {dest!r}, expected {want!r}')
+        ok('ini', rel, f'  {key} -> {dest}')
+    except Exception as exc:  # noqa: BLE001
+        bad('ini', rel, exc)
 else:
     print('  (prepared tree not present - skipped)')
 

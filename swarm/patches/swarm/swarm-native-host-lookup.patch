@@ -14,14 +14,20 @@
  #include "base/process/launch.h"
  #include "base/process/process.h"
  #include "base/strings/strcat.h"
-@@ -176,6 +178,32 @@
+@@ -176,6 +178,46 @@
        options);
  }
  
 +// SWARM: the manifest of a native messaging host shipped inside the SWARM
-+// Browser package. Such a host has no installer, so nothing writes it to the
-+// registry; it is simply next to chrome.exe, at
-+// <directory of chrome.exe>\swarm\hosts\<host name>.json.
++// Browser package. Such a host has no installer of its own, so nothing writes
++// it to the registry; it is one of the browser's own files, looked up in
++//   1. <directory of chrome.dll>\swarm\hosts\<host name>.json (DIR_MODULE),
++//   2. <directory of chrome.exe>\swarm\hosts\<host name>.json (DIR_EXE).
++// An installed browser keeps chrome.exe in the application directory and
++// everything else, the bundled host included, in the version directory beside
++// it, where chrome.dll is -- the directory Chromium also finds its own
++// Extensions folder in (chrome::DIR_EXTERNAL_EXTENSIONS). In the portable zip
++// both are the same folder.
 +//
 +// The host name arrives from an extension, so it is checked against the
 +// character set Chromium's own host names use before it is ever turned into a
@@ -34,20 +40,28 @@
 +      host_name.find("..") != std::string::npos) {
 +    return base::FilePath();
 +  }
-+  base::FilePath exe_dir;
-+  if (!base::PathService::Get(base::DIR_EXE, &exe_dir)) {
-+    return base::FilePath();
++  // <dir>\swarm\hosts\<host name>.json, or empty if there is no such file.
++  auto manifest_in = [&host_name](int dir_key) -> base::FilePath {
++    base::FilePath dir;
++    if (!base::PathService::Get(dir_key, &dir)) {
++      return base::FilePath();
++    }
++    base::FilePath candidate = dir.Append(FILE_PATH_LITERAL("swarm"))
++                                   .Append(FILE_PATH_LITERAL("hosts"))
++                                   .AppendASCII(host_name + ".json");
++    return base::PathExists(candidate) ? candidate : base::FilePath();
++  };
++  base::FilePath manifest_path = manifest_in(base::DIR_MODULE);
++  if (manifest_path.empty()) {
++    manifest_path = manifest_in(base::DIR_EXE);
 +  }
-+  base::FilePath manifest_path = exe_dir.Append(FILE_PATH_LITERAL("swarm"))
-+                                     .Append(FILE_PATH_LITERAL("hosts"))
-+                                     .AppendASCII(host_name + ".json");
-+  return base::PathExists(manifest_path) ? manifest_path : base::FilePath();
++  return manifest_path;
 +}
 +
  }  // namespace
  
  // static
-@@ -196,6 +224,13 @@
+@@ -196,6 +238,13 @@
    }
  
    if (!found) {

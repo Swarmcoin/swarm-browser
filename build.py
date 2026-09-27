@@ -331,6 +331,20 @@ def main():
             sys.executable,
             'tools\\rust\\build_bindgen.py', '--skip-test')
 
+    # SWARM: copy the bundled wallet host into out/Default/swarm/hosts BEFORE
+    # ninja. The mini_installer target packs what
+    # chrome/installer/mini_installer/chrome.release lists, at ninja time, and
+    # swarm-installer-host.patch lists swarm\hosts\*.* there. Idempotent (files
+    # already up to date are left alone), and skipped with a message, not
+    # failed, when the host has not been built. package.py installs it again
+    # for the portable zip.
+    subprocess.run([
+        sys.executable,
+        str(_ROOT_DIR / 'swarm' / 'install_swarm_assets.py'),
+        '--host-dest',
+        str(source_tree / 'out' / 'Default')
+    ], check=True)
+
     # Ninja commandline
     ninja_commandline = ['third_party\\ninja\\ninja.exe']
     if args.thread_count is not None:

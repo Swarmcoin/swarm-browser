@@ -8,7 +8,7 @@ The rule is simple and it is the whole point of the layout:
 > `build.py` and `package.py`, every one of them marked `# SWARM`.
 
 That keeps a rebase onto the next Chromium release a submodule bump plus a
-re-check of this layer's own 23 hunks, instead of a merge across ungoogled's
+re-check of this layer's own 24 hunks, instead of a merge across ungoogled's
 several hundred.
 
 Upstream provenance of this checkout:
@@ -18,7 +18,7 @@ Upstream provenance of this checkout:
 | `ungoogled-chromium-windows` tag | `153.0.8010.52-1.1`, commit `4fe389fe08dac85cead3ea77afe59834dbbc9673` |
 | `ungoogled-chromium` submodule | tag `153.0.8010.52-1`, commit `a638756eb14c8b6ce64b4b2a067afea5d4207bf4` |
 | Chromium | `153.0.8010.52` (`ungoogled-chromium/chromium_version.txt`) |
-| SWARM layer build | `swarm/revision.txt` (currently `1`) |
+| SWARM layer build | `swarm/revision.txt` (currently `2`: bumped from `1` when the installer started carrying the wallet host, so these packages are named `-2-` and cannot be mistaken for the earlier `-1-` builds) |
 
 Licences: upstream `LICENSE` files are untouched. The SWARM notices, and the
 BSD-3 notices for Chromium and ungoogled-chromium, are in `NOTICE-SWARM.md` at
@@ -33,6 +33,7 @@ swarm/
   patches/swarm/swarm-native-host-lookup.patch
   patches/swarm/swarm-privacy-defaults.patch
   patches/swarm/swarm-component-extensions.patch
+  patches/swarm/swarm-installer-host.patch
   brand/render_icons.py                re-cuts the SWARM mark into Chromium's icon set
   brand/icons/                         the rendered result (binary, copied in, not patched)
   extensions/wallet/                   bundled SWARM Wallet (copied from its own repo)
@@ -47,17 +48,30 @@ swarm/
 There is deliberately no `swarm/hosts/` in the source tree: it is a **build
 output** directory. See **The bundled wallet host** below.
 
-And the five marked hooks outside it:
+And the six marked hooks outside it:
 
 | File | `# SWARM` change |
 | --- | --- |
 | `build.py` | apply `swarm/patches` after the two upstream series |
 | `build.py` | run `swarm/install_swarm_assets.py` after patching |
 | `build.py` | append `swarm/flags.swarm.gn` to `out/Default/args.gn` |
-| `package.py` | call `install_bundled_host()` on `out/Default` before packaging |
+| `build.py` | run `swarm/install_swarm_assets.py --host-dest out/Default` right before ninja, so the installer can pack the wallet host |
+| `package.py` | call `install_bundled_host()` on `out/Default` before packaging (again; it leaves up-to-date files alone) |
 | `package.py` | name the outputs `SWARM-Browser-<chromium>-<swarm>-win-<arch>.{exe,zip}` |
 
-## The four patches
+## The five patches
+
+| Patch | Files | Hunks | What it does |
+| --- | --- | --- | --- |
+| `swarm-branding.patch` | 5 | 9 | SWARM name, install identity, native-messaging registry key |
+| `swarm-native-host-lookup.patch` | 1 | 3 | finds the bundled wallet host in the browser's own folders |
+| `swarm-privacy-defaults.patch` | 4 | 4 | privacy defaults compiled in |
+| `swarm-component-extensions.patch` | 6 | 7 | SWARM Wallet and SWARM Rewards as component extensions |
+| `swarm-installer-host.patch` | 1 | 1 | the installer packs the bundled wallet host |
+
+Applied in that order (`swarm/patches/series`), after both upstream series.
+16 distinct files, 24 hunks; `launch_context_win.cc` is the one file two
+patches touch.
 
 ### `swarm-branding.patch` (5 files, 9 hunks)
 
@@ -175,18 +189,38 @@ patch**: both touch that file, and the branding patch is what moves the
 registry literal the lookup below falls through from.
 
 The problem it solves: the wallet host is shipped *inside* the browser package,
-so at the moment an extension first asks for it nothing has run an installer and
-nothing has written `HKCU\Software\Swarm\SWARM Browser\NativeMessagingHosts`.
-A portable zip has no install step at all. Upstream Chromium has no concept of a
-native messaging host that travels with the browser: `GetManifestPath` looks in
-the registry and, failing that, reports *"Native messaging host … is not
-registered."*
+so at the moment an extension first asks for it nothing has written
+`HKCU\Software\Swarm\SWARM Browser\NativeMessagingHosts` for it: the browser's
+own installer registers no native messaging hosts, and a portable zip has no
+install step at all. Upstream Chromium has no concept of a native messaging
+host that travels with the browser: `GetManifestPath` looks in the registry
+and, failing that, reports *"Native messaging host … is not registered."*
 
 The patch adds `FindSwarmBundledManifest()` and calls it in exactly that
 `if (!found)` branch, so the order is:
 
 1. `HKCU`, then `HKLM`, 32-bit view then 64-bit (unchanged upstream behaviour);
-2. only if none of those hold the host, `<directory of chrome.exe>\swarm\hosts\<host name>.json`.
+2. only if none of those hold the host,
+   `<directory of chrome.dll>\swarm\hosts\<host name>.json` (`base::DIR_MODULE`);
+3. then `<directory of chrome.exe>\swarm\hosts\<host name>.json` (`base::DIR_EXE`).
+
+**Why the directory of `chrome.dll` comes first.** An installed Chromium keeps
+`chrome.exe` (and `chrome_proxy.exe`) in the application directory and
+everything else in a version directory beside it,
+`<install dir>\<version>\`, which is where `chrome.dll` is and where the
+installer puts the bundled host (see `swarm-installer-host.patch`). In the
+portable zip everything is one flat folder, so the two lookups are the same
+folder and the first one finds the host. `base::DIR_MODULE` is the directory of
+the module the calling code is linked into (`GetModuleFileName(CURRENT_MODULE())`
+in `base/base_paths_win.cc`), and in the browser process that is `chrome.dll`.
+Chromium itself finds its external-extensions folder the same way on Windows —
+`chrome::DIR_EXTERNAL_EXTENSIONS` is `DIR_MODULE\extensions`
+(`chrome/common/chrome_paths.cc`), matching the installer's
+`Extensions\*.*: %(VersionDir)s\Extensions\`. A side effect worth knowing: the
+host is always the one from the same version directory as the running
+`chrome.dll`, so a browser and its bundled host change version together.
+`DIR_EXE` stays as the second place so a host placed next to `chrome.exe` is
+still found.
 
 A host the user installed therefore still wins over the bundled one, and a
 browser that is merely unzipped finds its wallet with nothing written to the
@@ -198,11 +232,14 @@ path.** `FindSwarmBundledManifest` rejects an empty name, any character outside
 `..`, before `AppendASCII` is reached. Without that check a host name is a
 directory traversal: the name is attacker-chosen relative to the browser, and
 this is the one place a string from an extension is turned into a file path.
-The function returns an empty `FilePath` unless `base::PathExists` succeeds, so
-a missing file falls back to the unchanged "not registered" error.
+The check runs once, before either folder is tried, and both paths are built
+inside the same function from the validated name. The function returns an
+empty `FilePath` unless `base::PathExists` succeeds in one of the two folders,
+so a missing file falls back to the unchanged "not registered" error.
 
 The two extra includes are `base/files/file_util.h` (for `PathExists`) and
-`base/path_service.h` (for `DIR_EXE`).
+`base/path_service.h` (for `PathService`, and through `base/base_paths.h` for
+`DIR_MODULE` and `DIR_EXE`).
 
 ### `swarm-privacy-defaults.patch` (4 files, 4 hunks)
 
@@ -269,17 +306,72 @@ hand-written list would go stale the first time either gained a file — and
 quietly: the browser would build and then fail to find a script at runtime.
 At the commit recorded below that is 38 files, 22 wallet and 16 rewards.
 
+### `swarm-installer-host.patch` (1 file, 1 hunk)
+
+`chrome/installer/mini_installer/chrome.release` is the list of files the
+installer packs, each named relative to the build output directory and mapped
+to a folder of the installation: `%(ChromeDir)s` is the application directory,
+`%(VersionDir)s` the version directory beside it. The patch adds one entry at
+the end of `[GENERAL]`, under a `# SWARM` comment:
+
+```
+swarm\hosts\*.*: %(VersionDir)s\swarm\hosts\
+```
+
+so the three host files land in `<install dir>\<version>\swarm\hosts\`, next to
+`chrome.dll` — the first folder `FindSwarmBundledManifest` tries.
+
+**The list is read at ninja time, not at packaging time.** The `mini_installer`
+target (`chrome/installer/mini_installer/BUILD.gn`, action
+`mini_installer_archive`) runs `chrome/tools/build/win/create_installer_archive.py`,
+which copies what `chrome.release` lists into a staging folder and compresses it
+into the `chrome.packed.7z` resource of `mini_installer.exe`. By the time
+`package.py` runs, the installer is finished. That is why `build.py` copies the
+host into `out/Default/swarm/hosts/` right before ninja; `package.py`'s call
+alone reaches only the zip.
+
+**A build without the host still builds its installer.** `create_installer_archive.py`
+treats every entry, wildcard or plain file name, the same way: it globs it
+(`insensiglob` in `CopySectionFilesToStagingDir`), copies whatever matches and
+skips an entry that matches nothing, without an error (only `--verbose` prints
+"No matches found"). With no `host-dist` — CI today — the entry is empty and
+the installer ships without a bundled host. A wildcard rather than the three
+names follows the upstream `Extensions\*.*` entry and needs no edit if the host
+gains a file. The archive step writes a depfile listing every file it packed,
+so a changed host file makes ninja pack the installer again; that is why
+`install_bundled_host()` leaves files that are already up to date alone.
+
+**Install, update, uninstall.** `setup.exe` moves the whole version directory
+into place (`AddMoveTreeWorkItem` in `chrome/installer/setup/install_worker.cc`),
+so the host arrives with it. After an update the old version directory is
+removed by `DeleteOldVersions` (`chrome/installer/util/delete_old_versions.cc`),
+host included; that function leaves a version alone while any `.exe` or `.dll`
+anywhere in its directory is in use, which now includes a running
+`swarm-wallet-host.exe`, and it is retried later. Uninstalling runs
+`DeleteChromeFilesAndFolders` (`chrome/installer/setup/uninstall.cc`), which
+deletes every file and folder under the install directory except the running
+`setup.exe`'s own `Installer` folder, so the host goes with the rest.
+Installing the host writes nothing outside the install directory and nothing to
+the registry.
+
+**Size.** The host adds about 161 MB to the version directory before the
+installer's LZMA compression (`swarm-wallet-host.exe` 83 MB, `native.node`
+78 MB).
+
 ## The bundled wallet host (`swarm/hosts/`)
 
 `swarm/hosts/` never appears in this repository, and that is the point: its
 three files are **build outputs**, not sources. `install_swarm_assets.py`
-copies them into the build output directory, next to `chrome.exe`, and
-`package.py` calls it before anything is archived.
+copies them into the build output directory, `build.py` calls it right before
+ninja so the installer can pack them, and `package.py` calls it again before
+the zip is written.
 
 | | |
 | --- | --- |
 | Source of the files | `D:/swarm-work/host-dist` (`DEFAULT_HOST_DIST`, overridable with `--host-dist`) |
 | Destination | `<build output>/swarm/hosts/` — i.e. `build/src/out/Default/swarm/hosts/` |
+| In the portable zip | `SWARM-Browser-…-win-x64\swarm\hosts\`, beside `chrome.exe` and `chrome.dll` |
+| In an installation | `<install dir>\<version>\swarm\hosts\`, beside `chrome.dll` |
 | Files | `green.swarm.wallet_host.json`, `swarm-wallet-host.exe`, `native.node` |
 | Built by | `browser/host/sea/build-sea.js` in the `privacy-wallet-browser` repository (Node 22 single executable application) |
 
@@ -302,13 +394,25 @@ deliberately: an icon that vanished means Chromium renamed something and the
 build would silently ship a Chromium icon, while a host that was not built is
 the ordinary state of a tree on a machine that only builds the browser.
 
-**What reaches which artifact.** `package.py` hands the returned paths to
-`filescfg.create_archive`, so the three files are in the **portable zip**
-today. The `mini_installer` takes its file list from
-`chrome/installer/mini_installer/chrome.release`, which is *not* patched yet —
-until it is, the **installer does not carry the host**, and an installed SWARM
-Browser falls back to the registry path (i.e. it needs the wallet's own
-installer). That gap is real and is the next packaging task.
+**It is idempotent.** `build.py` calls it before every ninja run and
+`package.py` again before packaging; a file whose content is already in place
+is left alone (reported as "up to date"), so its timestamp does not make ninja
+pack the installer again.
+
+**What reaches which artifact.** Both, whenever `host-dist` exists when the
+browser is built:
+
+| Artifact | How the host gets in | Where it lands |
+| --- | --- | --- |
+| Installer `SWARM-Browser-…-win-x64.exe` | `build.py` copies it into `out/Default/swarm/hosts/` before ninja; `swarm-installer-host.patch` lists it in `chrome.release`, which the `mini_installer` target packs at ninja time | `<install dir>\<version>\swarm\hosts\` |
+| Portable `SWARM-Browser-…-win-x64.zip` | `package.py` hands `install_bundled_host()`'s paths to `filescfg.create_archive` next to upstream's `FILES.cfg` list | `SWARM-Browser-…-win-x64\swarm\hosts\`, beside `chrome.exe` |
+
+Where there is no `host-dist` — **every CI build today**, because the host is
+built only on this PC — neither artifact carries the host, the build does not
+fail, and the browser falls back to the registry path (it needs the wallet's
+own installer). Building the host in CI is the remaining half of this task.
+An x86 or arm64 build made on a machine with `host-dist` would carry the same
+x64 host; only x64 is a release target.
 
 Locally built at the time of writing (`D:/swarm-work/host-dist/SHA256SUMS.txt`):
 
@@ -319,7 +423,8 @@ ccb707f2fb22dd7444d469dd284299fddb79b6dab7efd53a18a3df96e7b05887  green.swarm.wa
 ```
 
 Those are one machine's outputs, not a release: CI has never built the host,
-and nothing here is signed.
+and nothing here is signed. (The manifest inside the build output differs from
+the one in `host-dist` by its rewritten `path`.)
 
 ## Where the two extensions come from
 
@@ -444,7 +549,9 @@ multi-GB toolchains. `apply_patches()` runs GNU patch with `check=True`, and
 GNU patch exits non-zero if any hunk fails, so reaching the end is the proof.
 
 Pass that tree to `check_syntax.py` as an argument and it will parse the
-patched `.grd` files and the installed manifests too:
+patched `.grd` files and the installed manifests too, and read the patched
+`chrome.release` with the installer's own `Readconfig()` (imported from that
+tree's `create_installer_archive.py`) to check where `swarm\hosts\*.*` lands:
 
 ```
 python swarm/devutils/check_syntax.py build/verify/chromium-153.0.8010.52
@@ -473,14 +580,22 @@ Note for rebases: `swarm-<name>.patch` files are regenerated, not hand-edited.
 replacements and refuses to run if an anchor has moved, which is a clearer
 failure than a rejected hunk.
 
+The generator needs the tree as it is after the two upstream series and
+*before* the SWARM series; a verify tree has all three applied. Without a
+second extraction: copy the target files out of a verify tree into a scratch
+tree, reverse the SWARM series there (`patch -p1 --reverse --fuzz=0`, last
+patch first), and run the generator on that copy *unchanged* first — it must
+reproduce every committed patch byte for byte before you change anything. That
+is how revision 2 was regenerated.
+
 ## Rebasing onto the next upstream tag
 
 1. `git fetch upstream && git merge <new tag>` — conflicts should be limited to
-   the four `# SWARM` hooks in `build.py` / `package.py`.
+   the six `# SWARM` hooks in `build.py` / `package.py`.
 2. `git -C ungoogled-chromium checkout <matching ungoogled tag>`.
 3. Re-prepare a tree (tarball, prune, both upstream series).
 4. Apply `swarm/patches/series`. Every hunk that fails points at a file
-   Chromium moved; the four patches touch 15 files, all listed above
+   Chromium moved; the five patches touch 16 files, all listed above
    (`launch_context_win.cc` is touched by two of them, branding first).
 5. Re-run `python swarm/brand/render_icons.py` and
    `python swarm/install_swarm_assets.py --source-tree build/src --dry-run`;
@@ -488,7 +603,10 @@ failure than a rejected hunk.
 6. Re-check the verified facts in this file — the install-modes header, the
    native-messaging registry literal, and that the two IIDs in the header still
    match the `uuid()` lines in the two `.idl` files. All three are exactly the
-   kind of thing Chromium moves between releases.
+   kind of thing Chromium moves between releases. For the bundled host, also
+   that the installer still keeps `chrome.dll` in `%(VersionDir)s` (what
+   `base::DIR_MODULE` finds) and that `create_installer_archive.py` still
+   skips a `chrome.release` entry that matches nothing.
 7. If either extension has moved on, re-copy it from the wallet repository
    (see **Where the two extensions come from**) and recompute both ids.
 8. Bump `swarm/revision.txt`.

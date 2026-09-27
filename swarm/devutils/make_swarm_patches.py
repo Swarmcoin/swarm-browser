@@ -183,10 +183,22 @@ def edit_launch_context_win(text, path):
 # SWARM reads, this one lets SWARM find a host that is not in the registry at
 # all. The two hunks sit far apart in the file, so applying them in series
 # costs GNU patch nothing but a line offset.
+#
+# Two folders are tried, base::DIR_MODULE first. The installer
+# (swarm-installer-host.patch) puts the host in the version directory, next to
+# chrome.dll; in the portable zip everything is one flat folder, where
+# DIR_MODULE and DIR_EXE are the same. DIR_EXE stays second, so a host placed
+# next to chrome.exe is still found.
 SWARM_BUNDLED_HOST_HELPER = '''// SWARM: the manifest of a native messaging host shipped inside the SWARM
-// Browser package. Such a host has no installer, so nothing writes it to the
-// registry; it is simply next to chrome.exe, at
-// <directory of chrome.exe>\\swarm\\hosts\\<host name>.json.
+// Browser package. Such a host has no installer of its own, so nothing writes
+// it to the registry; it is one of the browser's own files, looked up in
+//   1. <directory of chrome.dll>\\swarm\\hosts\\<host name>.json (DIR_MODULE),
+//   2. <directory of chrome.exe>\\swarm\\hosts\\<host name>.json (DIR_EXE).
+// An installed browser keeps chrome.exe in the application directory and
+// everything else, the bundled host included, in the version directory beside
+// it, where chrome.dll is -- the directory Chromium also finds its own
+// Extensions folder in (chrome::DIR_EXTERNAL_EXTENSIONS). In the portable zip
+// both are the same folder.
 //
 // The host name arrives from an extension, so it is checked against the
 // character set Chromium's own host names use before it is ever turned into a
@@ -199,21 +211,29 @@ base::FilePath FindSwarmBundledManifest(const std::string& host_name) {
       host_name.find("..") != std::string::npos) {
     return base::FilePath();
   }
-  base::FilePath exe_dir;
-  if (!base::PathService::Get(base::DIR_EXE, &exe_dir)) {
-    return base::FilePath();
+  // <dir>\\swarm\\hosts\\<host name>.json, or empty if there is no such file.
+  auto manifest_in = [&host_name](int dir_key) -> base::FilePath {
+    base::FilePath dir;
+    if (!base::PathService::Get(dir_key, &dir)) {
+      return base::FilePath();
+    }
+    base::FilePath candidate = dir.Append(FILE_PATH_LITERAL("swarm"))
+                                   .Append(FILE_PATH_LITERAL("hosts"))
+                                   .AppendASCII(host_name + ".json");
+    return base::PathExists(candidate) ? candidate : base::FilePath();
+  };
+  base::FilePath manifest_path = manifest_in(base::DIR_MODULE);
+  if (manifest_path.empty()) {
+    manifest_path = manifest_in(base::DIR_EXE);
   }
-  base::FilePath manifest_path = exe_dir.Append(FILE_PATH_LITERAL("swarm"))
-                                     .Append(FILE_PATH_LITERAL("hosts"))
-                                     .AppendASCII(host_name + ".json");
-  return base::PathExists(manifest_path) ? manifest_path : base::FilePath();
+  return manifest_path;
 }
 
 '''
 
 
 def edit_launch_context_win_bundled(text, path):
-    """Look next to chrome.exe when the registry has no entry for the host."""
+    """Look in the browser's own folders when the registry has no entry."""
     text = sub(text,
                '#include "base/files/file_path.h"\n',
                '#include "base/files/file_path.h"\n'
@@ -452,6 +472,42 @@ def edit_allowlist(text, path):
                path)
 
 
+# ------------------------------------------ 4. the installer carries the host
+# chrome/installer/mini_installer/chrome.release is the list of files the
+# installer packs, relative to the build output directory. It is read at NINJA
+# time: the mini_installer target runs
+# chrome/tools/build/win/create_installer_archive.py, which globs every entry
+# (CopySectionFilesToStagingDir). build.py therefore copies swarm/hosts/ into
+# out/Default before ninja runs; package.py's copy would come too late.
+#
+# The entry is a wildcard, like Extensions\*.* above it. An entry that matches
+# nothing is skipped without an error (a missing plain file name would be too;
+# the wildcard is used because it needs no edit when the host gains a file), so
+# a tree without the host -- CI today -- still builds its installer, only
+# without a bundled wallet host.
+#
+# %(VersionDir)s is <install dir>\<version>\, next to chrome.dll, which is where
+# FindSwarmBundledManifest looks first (base::DIR_MODULE). Uninstalling deletes
+# everything under the install directory, the host included.
+SWARM_INSTALLER_HOST_ENTRY = (
+    '#\n'
+    '# SWARM: the bundled SWARM Wallet native messaging host\n'
+    '# (green.swarm.wallet_host.json, swarm-wallet-host.exe, native.node).\n'
+    '# build.py copies it into swarm\\hosts\\ in the build output before ninja,\n'
+    '# and the browser looks for it next to chrome.dll first. An entry that\n'
+    '# matches nothing is skipped, so a build without the host still packs.\n'
+    '#\n'
+    'swarm\\hosts\\*.*: %(VersionDir)s\\swarm\\hosts\\\n')
+
+
+def edit_chrome_release(text, path):
+    """Pack <build output>/swarm/hosts/ into the installer's version dir."""
+    return sub(text,
+               '\n[HIDPI]\n',
+               '\n' + SWARM_INSTALLER_HOST_ENTRY + '\n[HIDPI]\n',
+               path)
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -485,6 +541,13 @@ PATCHES = {
         'chrome/browser/extensions/component_loader.cc': edit_component_loader_cc,
         'chrome/browser/extensions/component_extensions_allowlist/allowlist.cc':
             edit_allowlist,
+    },
+    # The installer carries the bundled host. Its own patch, because it is a
+    # different file and a different decision (what the installer ships)
+    # from the lookup above; appended last so the first four keep their
+    # places in the series.
+    'swarm-installer-host.patch': {
+        'chrome/installer/mini_installer/chrome.release': edit_chrome_release,
     },
 }
 
