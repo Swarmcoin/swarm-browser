@@ -1,3 +1,4 @@
+# SWARM Browser CI. Registered 2026-09-27; see swarm/README.md.
 # SWARM: upstream build-x64 kept as-is (name changed, workflow_dispatch kept).
 # The staged design in reusable-build.yml is unchanged.
 name: swarm-build-x64
