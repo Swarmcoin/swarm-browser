@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SWARM Update</title>
+    <link rel="stylesheet" href="swarm.css" />
+  </head>
+  <body>
+    <div class="popup">
+      <div class="topbar">
+        <img src="icons/update-128.png" alt="" />
+        <span class="title">SWARM Update</span>
+        <span class="spacer"></span>
+        <span class="network hidden" id="channel"></span>
+      </div>
+
+      <div class="content">
+        <div class="section">
+          <span class="balance-label">This browser</span>
+          <div class="version" id="running">…</div>
+          <p class="status" id="headline"></p>
+          <p class="note" id="detail"></p>
+          <p class="fine" id="checked"></p>
+        </div>
+
+        <div class="section hidden" id="offer">
+          <span class="balance-label">New version</span>
+          <div class="version new" id="offer-version"></div>
+          <p class="note" id="offer-published"></p>
+          <div class="buttons">
+            <button id="show" class="primary">See the download</button>
+            <button id="snooze">Remind me tomorrow</button>
+          </div>
+          <p class="fine hidden" id="snoozed"></p>
+        </div>
+
+        <div id="message" class="hidden"></div>
+
+        <div class="buttons">
+          <button id="check" class="ghost">Check now</button>
+          <button id="details" class="ghost">How this works</button>
+        </div>
+      </div>
+
+      <div class="footer">Nothing is downloaded or installed without you.</div>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

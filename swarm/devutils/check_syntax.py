@@ -73,7 +73,9 @@ for p in [ROOT / 'build.py', ROOT / 'package.py',
 
 print('JavaScript (node --check)')
 for p in [ROOT / '.github' / 'actions' / 'stage' / 'index.js'] + \
-         sorted(ROOT.glob('swarm/extensions/*/**/*.js')):
+         sorted(ROOT.glob('swarm/extensions/*/**/*.js')) + \
+         sorted(ROOT.glob('swarm/updates/*.mjs')) + \
+         sorted(ROOT.glob('swarm/tests/**/*.mjs')):
     try:
         # index.js and the extension scripts are ES modules.
         res = subprocess.run(['node', '--input-type=module', '--check'],
@@ -150,13 +152,65 @@ if (SRC / 'chrome' / 'browser' / 'browser_resources.grd').is_file():
         except Exception as exc:  # noqa: BLE001
             bad('xml', rel, exc)
     for rel in ['chrome/browser/resources/swarm_wallet/manifest.json',
-                'chrome/browser/resources/swarm_rewards/manifest.json']:
+                'chrome/browser/resources/swarm_rewards/manifest.json',
+                'chrome/browser/resources/swarm_update/manifest.json']:
         p = SRC / rel
         try:
             json.loads(p.read_text(encoding='utf-8'))
             ok('json', rel)
         except Exception as exc:  # noqa: BLE001
             bad('json', rel, exc)
+    # SWARM Update compares the signed feed with this file, so the tree's copy
+    # must carry the real build and channel "release", never the placeholder.
+    rel = 'chrome/browser/resources/swarm_update/version.json'
+    try:
+        stamped = json.loads((SRC / rel).read_text(encoding='utf-8'))
+        want = {
+            'chromium': (ROOT / 'ungoogled-chromium' / 'chromium_version.txt')
+            .read_text(encoding='utf-8').strip(),
+            'swarm': (ROOT / 'swarm' / 'revision.txt')
+            .read_text(encoding='utf-8').strip(),
+            'channel': 'release',
+        }
+        assert stamped == want, f'{stamped} != {want}'
+        ok('json', rel, f"  {stamped['chromium']} / SWARM {stamped['swarm']} / release")
+    except Exception as exc:  # noqa: BLE001
+        bad('json', rel, exc)
+else:
+    print('  (prepared tree not present - skipped)')
+
+print('Bundled extensions: folder, grd, BUILD.gn and tree copy, file for file')
+if (SRC / 'chrome' / 'browser' / 'browser_resources.grd').is_file():
+    component_grd = (SRC / 'chrome/browser/resources/component_extension_resources.grd'
+                     ).read_text(encoding='utf-8')
+    browser_grd = (SRC / 'chrome/browser/browser_resources.grd').read_text(encoding='utf-8')
+    build_gn = (SRC / 'chrome/browser/resources/BUILD.gn').read_text(encoding='utf-8')
+    for folder, dirname in (('wallet', 'swarm_wallet'), ('rewards', 'swarm_rewards'),
+                            ('update', 'swarm_update')):
+        label = f'{folder:7} -> {dirname}'
+        try:
+            source = ROOT / 'swarm' / 'extensions' / folder
+            files = sorted(f.relative_to(source).as_posix()
+                           for f in source.rglob('*') if f.is_file())
+            in_grd = sorted(re.findall(rf'file="{dirname}/([^"]+)"', component_grd))
+            in_gn = sorted(re.findall(rf'"{dirname}/([^"]+)"', build_gn))
+            manifests = re.findall(rf'file="resources\\{dirname}\\manifest\.json"', browser_grd)
+            tree = SRC / 'chrome' / 'browser' / 'resources' / dirname
+            in_tree = sorted(f.relative_to(tree).as_posix()
+                             for f in tree.rglob('*') if f.is_file())
+            assert in_grd == [f for f in files if f != 'manifest.json'], \
+                f'component grd differs: {sorted(set(in_grd) ^ set(files) - {"manifest.json"})}'
+            assert in_gn == files, f'BUILD.gn differs: {sorted(set(in_gn) ^ set(files))}'
+            assert len(manifests) == 1, 'manifest not in browser_resources.grd exactly once'
+            assert in_tree == files, f'tree copy differs: {sorted(set(in_tree) ^ set(files))}'
+            changed = [f for f in files
+                       if (tree / f).read_bytes() != (source / f).read_bytes()]
+            allowed = ['version.json'] if folder == 'update' else []
+            assert changed == allowed, f'changed on the way into the tree: {changed}'
+            ok('files', label, f'  {len(files)} files, grd/BUILD.gn/tree agree'
+               + ('; only version.json stamped' if allowed else '; byte-identical'))
+        except Exception as exc:  # noqa: BLE001
+            bad('files', label, exc)
 else:
     print('  (prepared tree not present - skipped)')
 

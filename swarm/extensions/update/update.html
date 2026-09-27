@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SWARM Browser update</title>
+    <link rel="stylesheet" href="swarm.css" />
+  </head>
+  <body>
+    <div class="topbar">
+      <img src="icons/update-128.png" alt="" />
+      <span class="title">SWARM Browser update</span>
+      <span class="spacer"></span>
+      <span class="network hidden" id="channel"></span>
+    </div>
+
+    <div class="page">
+      <div class="section">
+        <h1 id="headline">…</h1>
+        <p class="note" id="detail"></p>
+        <div class="kv">
+          <span class="balance-label">This browser</span>
+          <span class="mono" id="running"></span>
+        </div>
+        <p class="fine" id="checked"></p>
+      </div>
+
+      <div class="hidden" id="offer">
+        <div class="section">
+          <span class="balance-label">New version</span>
+          <div class="version new" id="offer-version"></div>
+          <p class="note" id="offer-published"></p>
+          <p class="promise" id="nothing">
+            Nothing has been downloaded, and nothing will install itself. This page only shows where the new version
+            is. Download it when you choose, and compare its SHA-256 before you run it.
+          </p>
+        </div>
+
+        <div class="section">
+          <h2>Installer</h2>
+          <div class="download-row">
+            <a class="download" id="installer-link" href="#" target="_blank" rel="noopener noreferrer">Download</a>
+            <span class="note" id="installer-size"></span>
+          </div>
+          <span class="balance-label">SHA-256 to compare</span>
+          <div class="hash-row">
+            <div class="hash" id="installer-sha"></div>
+            <button id="copy-installer" class="ghost">Copy</button>
+          </div>
+
+          <h2 class="gap-top">Portable, nothing installed</h2>
+          <div class="download-row">
+            <a class="download secondary" id="portable-link" href="#" target="_blank" rel="noopener noreferrer">Download</a>
+            <span class="note" id="portable-size"></span>
+          </div>
+          <span class="balance-label">SHA-256 to compare</span>
+          <div class="hash-row">
+            <div class="hash" id="portable-sha"></div>
+            <button id="copy-portable" class="ghost">Copy</button>
+          </div>
+
+          <p class="fine gap-top">
+            To compare: open PowerShell in the folder the file was saved to and run
+            <span class="mono">Get-FileHash</span> followed by the file name. The Hash it prints must be the same as the
+            SHA-256 above, character for character (upper or lower case does not matter). If it is not the same, delete
+            the file and do not run it.
+          </p>
+          <p class="fine">
+            <a class="textlink" id="notes-link" href="#" target="_blank" rel="noopener noreferrer">What is new in this version</a>
+          </p>
+        </div>
+
+        <div class="section">
+          <div class="buttons">
+            <button id="snooze">Remind me tomorrow</button>
+            <button id="check" class="ghost">Check again</button>
+          </div>
+          <p class="fine hidden" id="snoozed"></p>
+        </div>
+      </div>
+
+      <div class="section hidden" id="check-section">
+        <div class="buttons">
+          <button id="check-plain" class="ghost">Check now</button>
+        </div>
+      </div>
+
+      <div id="message" class="hidden"></div>
+
+      <div class="section">
+        <h2>How this works</h2>
+        <ul class="plain">
+          <li>
+            Once a day this browser reads one public file,
+            <span class="mono">https://swarm.green/browser/updates.json</span>: the list of SWARM Browser versions.
+          </li>
+          <li>
+            The list is signed. This browser checks the signature against a key built into it before it believes any of
+            it, and ignores a list that is unsigned, altered, older than one it has already seen, or that offers an
+            older version than the one you have.
+          </li>
+          <li>
+            Nothing about you is sent: no cookies, no identifier, no page you visited. swarm.green sees that a SWARM
+            Browser asked, and from which internet address, as any website would.
+          </li>
+          <li>It never downloads or installs anything. The download is a link you click, like any other.</li>
+        </ul>
+      </div>
+    </div>
+    <script type="module" src="update.js"></script>
+  </body>
+</html>

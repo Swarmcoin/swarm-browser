@@ -1,0 +1,359 @@
+/*
+ * SWARM Update, in the browser.
+ *
+ * The same tokens, type and voice as SWARM Wallet and SWARM Rewards next to
+ * it (swarm/extensions/rewards/swarm.css), so the three read as one product;
+ * the rules at the end are the few things only this extension has: the
+ * version, the download link and the hash to compare. Fonts are the same
+ * bundled files, copied, not fetched.
+ */
+
+@font-face {
+  font-family: "Sora";
+  src: url("fonts/sora-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/manrope-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/manrope-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/jetbrains-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --hive-orange: #ff8a1f;
+  --honey: #ffb020;
+  --clear-blue: #6fb6ff;
+  --void: #0a0908;
+  --base: #100e0c;
+  --surface: #171411;
+  --surface-2: #1f1b17;
+  --wax: #f5efe4;
+  --mid: #a89f92;
+  --low: #6b645a;
+  --success: #3dd68c;
+  --danger: #ff5c5c;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--base);
+  color: var(--wax);
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Sora", system-ui, sans-serif;
+  font-weight: 600;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 18px;
+}
+h2 {
+  font-size: 15px;
+}
+
+p {
+  margin: 0 0 12px;
+  color: var(--mid);
+}
+
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── layout ───────────────────────────────────────────────────────────── */
+
+.popup {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--void);
+  border-bottom: 1px solid #241f1a;
+}
+
+.topbar img {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+
+.topbar .title {
+  font-family: "Sora", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.topbar .spacer {
+  flex: 1;
+}
+
+.network {
+  font-size: 11px;
+  color: var(--clear-blue);
+  border: 1px solid #244055;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.content {
+  flex: 1;
+  padding: 16px;
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid #241f1a;
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.balance-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--low);
+}
+
+.footer {
+  border-top: 1px solid #241f1a;
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--low);
+  background: var(--void);
+}
+
+/* ── controls ─────────────────────────────────────────────────────────── */
+
+button {
+  font-family: "Manrope", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid #2c261f;
+  background: var(--surface-2);
+  color: var(--wax);
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #3a3229;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--hive-orange);
+  border-color: var(--hive-orange);
+  color: #1b1004;
+}
+
+button.primary:hover {
+  background: var(--honey);
+  border-color: var(--honey);
+}
+
+button.ghost {
+  background: transparent;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── status, messages ─────────────────────────────────────────────────── */
+
+.status {
+  font-family: "Sora", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--wax);
+  margin: 10px 0 4px;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--mid);
+}
+
+.fine {
+  font-size: 11px;
+  color: var(--low);
+  margin: 6px 0 0;
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger);
+  border: 1px solid #4a2a2a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #1a1210;
+  margin-bottom: 12px;
+}
+
+.ok {
+  font-size: 12px;
+  color: var(--success);
+  margin-bottom: 12px;
+}
+
+ul.plain {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--mid);
+  font-size: 12px;
+}
+
+ul.plain li {
+  margin-bottom: 6px;
+}
+
+.gap-top {
+  margin-top: 14px;
+}
+
+/* ── update: the version, the download, the hash ──────────────────────── */
+
+.version {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 15px;
+  color: var(--wax);
+  margin: 4px 0 2px;
+  word-break: break-word;
+}
+
+.version.new {
+  font-size: 22px;
+  color: var(--hive-orange);
+}
+
+.kv {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.promise {
+  color: var(--wax);
+  font-size: 13px;
+  border-left: 3px solid var(--hive-orange);
+  padding: 6px 0 6px 12px;
+  margin: 12px 0 0;
+}
+
+.download-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+
+a.download {
+  display: inline-block;
+  font-family: "Manrope", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: var(--hive-orange);
+  border: 1px solid var(--hive-orange);
+  color: #1b1004;
+  word-break: break-all;
+}
+
+a.download:hover {
+  background: var(--honey);
+  border-color: var(--honey);
+}
+
+a.download.secondary {
+  background: var(--surface-2);
+  border-color: #2c261f;
+  color: var(--wax);
+}
+
+a.download.secondary:hover {
+  border-color: #3a3229;
+}
+
+a.textlink {
+  color: var(--hive-orange);
+}
+
+.hash-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.hash {
+  flex: 1;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--honey);
+  background: var(--void);
+  border: 1px solid #3a2a14;
+  border-radius: 8px;
+  padding: 8px 10px;
+  word-break: break-all;
+  user-select: all;
+}

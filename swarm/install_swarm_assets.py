@@ -13,11 +13,18 @@ It does two things:
    exist -- if Chromium renames or drops an icon, this fails loudly instead of
    silently leaving a Chromium icon in a SWARM build.
 
-2. Bundled component extensions: swarm/extensions/wallet and
-   swarm/extensions/rewards are copied to
-   chrome/browser/resources/swarm_wallet and .../swarm_rewards, the paths that
+2. Bundled component extensions: swarm/extensions/wallet,
+   swarm/extensions/rewards and swarm/extensions/update are copied to
+   chrome/browser/resources/swarm_wallet, .../swarm_rewards and
+   .../swarm_update, the paths that
    swarm/patches/swarm/swarm-component-extensions.patch registers in
    browser_resources.grd and component_extension_resources.grd.
+   The one file changed on the way is swarm_update/version.json: the
+   committed copy is the development placeholder
+   {"chromium":"0.0.0.0","swarm":"0","channel":"dev"}, and the tree gets the
+   real Chromium version (ungoogled-chromium/chromium_version.txt), the SWARM
+   revision (swarm/revision.txt) and channel "release", which is what SWARM
+   Update compares the signed update feed against.
 
 3. Bundled native messaging host: the built swarm-wallet-host.exe, its wallet
    core and its manifest are copied into `swarm/hosts/` in the BUILD OUTPUT
@@ -32,6 +39,7 @@ It does two things:
 """
 import argparse
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -59,7 +67,57 @@ HOST_FILES = (HOST_MANIFEST_NAME, 'swarm-wallet-host.exe', 'native.node')
 BUNDLED_EXTENSIONS = {
     'wallet': 'swarm_wallet',
     'rewards': 'swarm_rewards',
+    'update': 'swarm_update',
 }
+
+# SWARM: the update extension learns which build it is part of from its
+# version.json, stamped here. Only this copy says channel "release"; the
+# committed file says "dev", which is what lets a development copy be pointed
+# at another feed address for testing and what a release build refuses.
+UPDATE_FOLDER = 'update'
+UPDATE_VERSION_FILE = 'version.json'
+CHROMIUM_VERSION_FILE = HERE.parent / 'ungoogled-chromium' / 'chromium_version.txt'
+SWARM_REVISION_FILE = HERE / 'revision.txt'
+UPDATE_FEED_KEY_FILE = EXTENSIONS / 'update' / 'lib' / 'feed-key.js'
+_VERSION_PART = r'(?:0|[1-9][0-9]{0,8})'
+
+
+def release_version():
+    """The running build as SWARM Update must see it in a release tree."""
+    chromium = CHROMIUM_VERSION_FILE.read_text(encoding='utf-8').strip()
+    swarm = SWARM_REVISION_FILE.read_text(encoding='utf-8').strip()
+    if not re.fullmatch(rf'{_VERSION_PART}(?:\.{_VERSION_PART}){{3}}', chromium):
+        raise SystemExit(f'{CHROMIUM_VERSION_FILE}: "{chromium}" is not a '
+                         'four-part Chromium version')
+    if not re.fullmatch(_VERSION_PART, swarm):
+        raise SystemExit(f'{SWARM_REVISION_FILE}: "{swarm}" is not a plain '
+                         'revision number')
+    return {'chromium': chromium, 'swarm': swarm, 'channel': 'release'}
+
+
+def stamp_update_version(extension_dir, dry_run=False):
+    """Rewrite <extension_dir>/version.json for a release build."""
+    version = release_version()
+    target = Path(extension_dir) / UPDATE_VERSION_FILE
+    if not target.is_file():
+        raise SystemExit(f'{target} is missing -- SWARM Update cannot know '
+                         'which build it is part of')
+    print(f'  update: {UPDATE_VERSION_FILE} -> chromium {version["chromium"]}, '
+          f'swarm {version["swarm"]}, channel release')
+    if not dry_run:
+        target.write_text(json.dumps(version, separators=(',', ':')) + '\n',
+                          encoding='utf-8', newline='\n')
+    return version
+
+
+def warn_if_dev_feed_key():
+    """Say so, on every build, while the update feed key is a test key."""
+    labels = re.findall(r'label:\s*"([^"]+)"',
+                        UPDATE_FEED_KEY_FILE.read_text(encoding='utf-8'))
+    if not labels or any(label.startswith('dev') for label in labels):
+        print('  WARNING: SWARM Update trusts a DEVELOPMENT feed key '
+              f'({", ".join(labels) or "none"}). Before any public release the '
+              'owner makes the production key (swarm/updates/README.md).')
 
 
 def install_branding(source_tree, dry_run):
@@ -97,6 +155,9 @@ def install_extensions(source_tree, dry_run):
             if dest.exists():
                 shutil.rmtree(dest)
             shutil.copytree(src, dest)
+        if folder == UPDATE_FOLDER:
+            stamp_update_version(src if dry_run else dest, dry_run)
+            warn_if_dev_feed_key()
         count += 1
     return count
 

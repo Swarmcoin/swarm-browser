@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "SWARM Update",
+  "short_name": "SWARM Update",
+  "version": "0.1.0",
+  "description": "Once a day, reads the signed list of SWARM Browser versions from swarm.green and tells you when a new one is out. It never downloads or installs anything by itself.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsP8+RNIvDgAtGiMgxJ54O/V9s/TDDi0U7QYC7jqMBUUzZ80ePo8rx2oZmnBpkJAvDhaxAw5q4LNGQuSWtASHfMXwzcdXYGu7C0gdn4sXVEt2t4uy7u+xP50YQ13Mvyw8y7vL7hxx9sEZANsQWVmBdSWCmng81hHBvqtAqUrKSXBMXp3XjA4KFej0vIM2OfywEUXaoDg6vxR/Kr8BMdkUIHWLaGUgN4EYf/iqbsfghxkj00TbmGcUrjAj4NtdLiwv99mCvy7QABg+JK7p7fTIZBFj2gRftJsbtqSWbjm76Q5ynnDr4DBmZqKwrsWhhpcuNzsLaqBJrKeknlBsCcup6QIDAQAB",
+  "minimum_chrome_version": "153",
+  "permissions": ["alarms", "notifications", "storage"],
+  "host_permissions": ["https://swarm.green/*"],
+  "action": {
+    "default_title": "SWARM Update",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/update-16.png",
+      "32": "icons/update-32.png",
+      "48": "icons/update-48.png",
+      "128": "icons/update-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/update-16.png",
+    "32": "icons/update-32.png",
+    "48": "icons/update-48.png",
+    "128": "icons/update-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://swarm.green; img-src 'self'; font-src 'self'; style-src 'self'"
+  },
+  "content_scripts": [],
+  "web_accessible_resources": []
+}
