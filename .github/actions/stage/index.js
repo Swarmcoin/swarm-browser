@@ -28,8 +28,25 @@ async function run() {
     if (from_artifact) {
         const artifactInfo = await artifact.getArtifact(artifactName);
         await artifact.downloadArtifact(artifactInfo.artifact.id, {path: 'C:\\swarm-browser\\build'});
-        await exec.exec('7z', ['x', 'C:\\swarm-browser\\build\\artifacts.zip',
-            '-oC:\\swarm-browser\\build', '-y']);
+        // SWARM: the downloaded artifact can still be held open by another
+        // process (antimalware scan, the artifact client's own handle) when 7z
+        // starts. Run 36373911994 build-3 died that way with a correct digest
+        // ("The process cannot access the file because it is being used by
+        // another process"). Retry the extraction instead of losing the run.
+        let extracted = false;
+        for (let attempt = 1; attempt <= 6 && !extracted; ++attempt) {
+            const code = await exec.exec('7z', ['x', 'C:\\swarm-browser\\build\\artifacts.zip',
+                '-oC:\\swarm-browser\\build', '-y'], {ignoreReturnCode: true});
+            if (code === 0) {
+                extracted = true;
+            } else {
+                console.error(`7z extraction attempt ${attempt} failed with exit code ${code}`);
+                await new Promise(r => setTimeout(r, 30000));
+            }
+        }
+        if (!extracted) {
+            throw new Error('artifacts.zip could not be extracted after 6 attempts');
+        }
         await io.rmRF('C:\\swarm-browser\\build\\artifacts.zip');
     }
 
