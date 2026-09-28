@@ -1,4 +1,4 @@
-# SWARM Browser CI. Registered 2026-09-27; see swarm/README.md.
+# SWARM Browser CI. Registered 2026-09-27 (Swarm-Official) and 2026-09-28 (louisinthesubway/swarm-browser); see swarm/README.md.
 # SWARM: upstream publish-release, trimmed to what a SWARM release needs.
 #
 # Kept from upstream: the tag-resolution logic, the "find the latest successful

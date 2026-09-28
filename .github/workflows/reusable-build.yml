@@ -1,4 +1,4 @@
-# SWARM Browser CI. Registered 2026-09-27; see swarm/README.md.
+# SWARM Browser CI. Registered 2026-09-27 (Swarm-Official) and 2026-09-28 (louisinthesubway/swarm-browser); see swarm/README.md.
 name: swarm-reusable-build
 on:
   workflow_call:

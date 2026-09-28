@@ -1,4 +1,4 @@
-# SWARM Browser CI. Registered 2026-09-27; see swarm/README.md.
+# SWARM Browser CI. Registered 2026-09-27 (Swarm-Official) and 2026-09-28 (louisinthesubway/swarm-browser); see swarm/README.md.
 # SWARM: upstream build workflow kept as-is (name changed). arm is not a
 # SWARM release target yet, so it runs on manual dispatch only.
 name: swarm-build-arm
