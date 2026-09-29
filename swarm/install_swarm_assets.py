@@ -239,6 +239,14 @@ def main():
         print(f'Installing SWARM assets into {source_tree}')
         icons = install_branding(source_tree, args.dry_run)
         exts = install_extensions(source_tree, args.dry_run)
+        # SWARM: the UI product strings (swarm/brand/product_strings.py); the
+        # BRANDING file only renames the installer and app identity.
+        sys.path.insert(0, str(HERE / 'brand'))
+        from product_strings import rewrite_strings, GRD_RELPATH, PRODUCT
+        strings_counts = rewrite_strings(source_tree / GRD_RELPATH, args.dry_run)
+        print(f'  strings: {GRD_RELPATH.name}: {strings_counts["word_replacements"]} x Chromium -> {PRODUCT}, '
+              f'{strings_counts["explicit_messages"]} about-page messages set, '
+              f'{strings_counts["remaining_word_chromium"]} protected/skipped uses kept')
         print(f'SWARM assets installed: {icons} icon files, {exts} extensions')
     elif not args.host_dest:
         raise SystemExit('give --source-tree, --host-dest, or both')

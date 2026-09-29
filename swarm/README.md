@@ -565,6 +565,37 @@ Tests: `node --test "swarm/tests/update/*.test.mjs"` (99, no network) and
 `node swarm/tests/update/smoke-edge.mjs` (Edge with a disposable profile,
 34 checks; screenshots `D:/swarm-work/smoke/05-update-*`).
 
+## Product strings (`swarm/brand/product_strings.py`)
+
+The BRANDING file only renames the installer, the app identity and the profile
+folder. Every sentence the user reads -- "About Chromium", the window title
+"<page> - Chromium", "Chromium is up to date" -- lives in
+`chrome/app/chromium_strings.grd`: 748 whole-word uses of "Chromium" in
+Chromium 153. The 2026-09-29 local build showed exactly that gap: chrome://version
+and Settings still said Chromium.
+
+A unified diff of that many hunks would break at every rebase, so the layer
+rewrites the file at asset-install time instead, the way ungoogled-chromium's
+domain substitution rewrites sources. `install_swarm_assets.py --source-tree`
+calls `rewrite_strings()` after the icons and extensions. Rules:
+
+* only message TEXT lines change; `<message ... desc="...">` declarations,
+  XML comments and translator notes stay, so the message names and the
+  generated `IDS_*` header are unchanged and nothing recompiles;
+* whole word `Chromium` -> `SWARM Browser`; `ChromiumOS` is one token and
+  untouched; `Chromium Authors` and `Based on Chromium` are protected;
+* the about pages get an explicit company name (`Swarm`) and the same
+  notice the BRANDING file carries: *Copyright <year> Swarm. Based on
+  Chromium, Copyright <year> The Chromium Authors. All rights reserved.*;
+* the grd declares `fallback_to_english="true"`, so the 81 `.xtb`
+  translation files are left alone and other locales fall back to the
+  English text for the changed messages.
+
+Idempotent (a second run reports 0 replacements). Unit test:
+`python swarm/tests/brand/test_product_strings.py`. On the 153 tree the run
+reports 595 replacements, 2 about-page messages set, 157 protected or
+skipped uses kept.
+
 ## Icons
 
 `swarm/brand/render_icons.py` re-cuts the approved SWARM mark from
