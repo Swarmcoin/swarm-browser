@@ -46,6 +46,7 @@ COPYRIGHT = ('Copyright <ph name="YEAR">{0,date,y}<ex>2016</ex></ph> Swarm. '
              'The Chromium Authors. All rights reserved.')
 PROTECTED = ('Chromium Authors', 'Based on Chromium')
 WORD = re.compile(r'\bChromium\b')
+PART = re.compile(r'<part file="([^"]+)"')
 
 
 def _skip_line(line):
@@ -110,9 +111,28 @@ def rewrite_strings(grd_path, dry_run=False):
         out.append(new)
     result = ''.join(out)
     counts = {'word_replacements': replaced, 'explicit_messages': explicit,
-              'remaining_word_chromium': len(WORD.findall(result))}
+              'remaining_word_chromium': len(WORD.findall(result)), 'parts': 0}
     if not dry_run and result != text:
         Path(grd_path).write_text(result, encoding='utf-8')
+    # The grd includes part files (<part file="settings_chromium_strings.grdp"/>,
+    # 147 more uses in Chromium 153, among them "About Chromium" in Settings).
+    # Same word rule, no explicit messages.
+    for part in PART.findall(text):
+        part_path = Path(grd_path).parent / part
+        if not part_path.is_file():
+            raise SystemExit(f'{grd_path}: part file {part} not found')
+        part_text = part_path.read_text(encoding='utf-8')
+        part_out = []
+        for line in part_text.splitlines(keepends=True):
+            new, n = _rewrite_word(line)
+            replaced += n
+            counts['word_replacements'] += n
+            part_out.append(new)
+        part_result = ''.join(part_out)
+        counts['remaining_word_chromium'] += len(WORD.findall(part_result))
+        counts['parts'] += 1
+        if not dry_run and part_result != part_text:
+            part_path.write_text(part_result, encoding='utf-8')
     return counts
 
 

@@ -100,6 +100,19 @@ class ProductStringsTest(unittest.TestCase):
         product_strings.rewrite_strings(self.grd, dry_run=True)
         self.assertEqual(SAMPLE, self.grd.read_text(encoding='utf-8'))
 
+    def test_part_files_get_the_word_rule(self):
+        part = Path(self.dir.name) / 'settings_chromium_strings.grdp'
+        part.write_text('<grit-part>\n  <message name="IDS_SETTINGS_ABOUT_PROGRAM" desc="About Chromium menu">\n'
+                        '    About Chromium\n  </message>\n</grit-part>\n', encoding='utf-8')
+        self.grd.write_text(SAMPLE.replace('<translations>', '<part file="settings_chromium_strings.grdp" />\n  <translations>'), encoding='utf-8')
+        counts = product_strings.rewrite_strings(self.grd)
+        out = part.read_text(encoding='utf-8')
+        self.assertIn('    About SWARM Browser\n', out)
+        self.assertIn('desc="About Chromium menu"', out)
+        self.assertEqual(counts['parts'], 1)
+        counts2 = product_strings.rewrite_strings(self.grd)
+        self.assertEqual(counts2['word_replacements'], 0)
+
 
 if __name__ == '__main__':
     unittest.main()
