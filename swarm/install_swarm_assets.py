@@ -188,6 +188,13 @@ def install_bundled_host(dest_root, host_dist=None, dry_run=False):
     """
     dist = Path(host_dist or DEFAULT_HOST_DIST)
     missing = [name for name in HOST_FILES if not (dist / name).is_file()]
+    installed = Path(dest_root) / HOST_RELDIR
+    if missing and all((installed / name).is_file() for name in HOST_FILES):
+        # A later CI stage: the host was built and copied by an earlier stage
+        # and travelled inside build/src; there is no host-dist on this runner.
+        print(f'  host: {HOST_RELDIR.as_posix()} already holds the three files '
+              f'(no host-dist on this machine); kept')
+        return [HOST_RELDIR / name for name in HOST_FILES]
     if missing:
         print(f'  host: not bundled -- {dist} has no {", ".join(missing)}.')
         print('        Build it with browser/host/sea/build-sea.js in the '

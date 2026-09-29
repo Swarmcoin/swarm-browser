@@ -1,0 +1,10 @@
+{
+  "name": "swarm-wallet-host-build-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The two tools swarm/host/build_host.py builds the wallet host with: esbuild (one CommonJS bundle) and postject (injects it into a copy of node.exe). Build time only; nothing here ships.",
+  "dependencies": {
+    "esbuild": "0.28.2",
+    "postject": "1.0.0-alpha.6"
+  }
+}

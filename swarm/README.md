@@ -430,9 +430,23 @@ Locally built at the time of writing (`D:/swarm-work/host-dist/SHA256SUMS.txt`):
 ccb707f2fb22dd7444d469dd284299fddb79b6dab7efd53a18a3df96e7b05887  green.swarm.wallet_host.json
 ```
 
-Those are one machine's outputs, not a release: CI has never built the host,
-and nothing here is signed. (The manifest inside the build output differs from
-the one in `host-dist` by its rewritten `path`.)
+Those are one machine's outputs, not a release, and nothing here is signed.
+(The manifest inside the build output differs from the one in `host-dist` by
+its rewritten `path`.)
+
+**CI builds the host itself since 2026-09-29.** `swarm/host/` holds the host's
+JavaScript (vendored, byte-identical to the wallet repository at `79c0c039`),
+the two build tools pinned by a lockfile, and `native.lock`, which names the
+public SWARM Wallet release that carries the wallet core together with the
+SHA-256 of the zip and of `native.node` inside it. `build.py --ci` runs
+`swarm/host/build_host.py` when the machine has no host-dist and
+`out/Default/swarm/hosts` is still empty; later stages find the three files
+already inside the tree (`install_bundled_host` keeps them and still returns
+their paths for the zip). The prepare action pins Node 22.12.0, because the
+`node.exe` that builds the host becomes its runtime. Details and provenance:
+`swarm/host/README.md`. Verified on the build PC: both build paths (local
+core, and download-by-lock) produce a host that `launcher-check.js` starts the
+way Chromium does ("core loaded", mainnet block height, exit 0).
 
 ## Where the extensions come from
 

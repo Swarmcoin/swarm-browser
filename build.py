@@ -338,12 +338,28 @@ def main():
     # already up to date are left alone), and skipped with a message, not
     # failed, when the host has not been built. package.py installs it again
     # for the portable zip.
-    subprocess.run([
+    # SWARM: on CI no host has been built on the machine, so build it from
+    # pinned inputs (swarm/host/build_host.py) unless an earlier stage already
+    # put the three files into out/Default, where they travel with the tree.
+    host_command = [
         sys.executable,
         str(_ROOT_DIR / 'swarm' / 'install_swarm_assets.py'),
         '--host-dest',
         str(source_tree / 'out' / 'Default')
-    ], check=True)
+    ]
+    swarm_hosts_dir = source_tree / 'out' / 'Default' / 'swarm' / 'hosts'
+    swarm_host_files = ('green.swarm.wallet_host.json', 'swarm-wallet-host.exe', 'native.node')
+    if args.ci and not Path('D:/swarm-work/host-dist').is_dir() and not all(
+            (swarm_hosts_dir / name).is_file() for name in swarm_host_files):
+        ci_host_dist = _ROOT_DIR / 'build' / 'host-dist'
+        subprocess.run([
+            sys.executable,
+            str(_ROOT_DIR / 'swarm' / 'host' / 'build_host.py'),
+            '--out', str(ci_host_dist),
+            '--cache', str(downloads_cache)
+        ], check=True)
+        host_command += ['--host-dist', str(ci_host_dist)]
+    subprocess.run(host_command, check=True)
 
     # Ninja commandline
     ninja_commandline = ['third_party\\ninja\\ninja.exe']

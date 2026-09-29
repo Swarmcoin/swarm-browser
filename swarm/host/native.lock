@@ -1,0 +1,12 @@
+{
+  "comment": "The wallet core the bundled host ships. CI downloads the zip, checks both hashes and extracts the member; a changed core means a new lock entry and a re-run of the host's tests against it.",
+  "wallet_release": "swarm-wallet-0.1.0-mainnet.9",
+  "zip_url": "https://github.com/louisinthesubway/swarm-releases/releases/download/swarm-wallet-0.1.0-mainnet.9/SWARM-Wallet-0.1.0-mainnet.9-x64.zip",
+  "zip_name": "SWARM-Wallet-0.1.0-mainnet.9-x64.zip",
+  "zip_size": 222385720,
+  "zip_sha256": "b87e24116b787e5119aedbca498e6a7ce6df3042326f349a42089331f625403e",
+  "member": "resources/app.asar.unpacked/build/native.node",
+  "native_size": 82214912,
+  "native_sha256": "6b2e806167902cb45250c337d512f6dcdec313de4969aa424e7dd5ec9633f2c7",
+  "verified": "2026-09-29: host unit tests 42/42 and the mainnet end-to-end check passed against this core (host 0.1.0, Node 22.12.0)"
+}

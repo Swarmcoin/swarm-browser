@@ -1,0 +1,6 @@
+# SWARM: everything under swarm/host keeps LF line endings on every checkout,
+# Windows runners included (their git has core.autocrlf=true). The vendored
+# host sources are then byte-identical to the wallet repository's files (that
+# repository says `* text eol=lf`), and build_host.py bundles the same bytes
+# on every machine.
+* text eol=lf
