@@ -68,6 +68,8 @@ for p in [ROOT / 'build.py', ROOT / 'package.py',
           ROOT / 'swarm' / 'brand' / 'render_ui_logos.py',
           ROOT / 'swarm' / 'brand' / 'product_strings.py',
           ROOT / 'swarm' / 'brand' / 'ui_strings.py',
+          ROOT / 'swarm' / 'brand' / 'icons_ui.py',
+          ROOT / 'swarm' / 'brand' / 'icons-ui' / 'draw_masters.py',
           ROOT / 'swarm' / 'devutils' / 'make_swarm_patches.py',
           ROOT / 'swarm' / 'devutils' / 'prepare_and_verify.py']:
     try:

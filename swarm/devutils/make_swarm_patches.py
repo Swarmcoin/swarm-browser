@@ -696,6 +696,35 @@ def edit_chrome_urls_heading(text, path):
                '<h2>List of SWARM Browser pages</h2>\n', path)
 
 
+# ------------------------------------------------ 11. UI icons (G5)
+# The Settings sidebar draws SVG iconsets; each <g id> listed in
+# swarm/brand/icons_ui.py SETTINGS_ICONS is replaced, in every iconset of
+# settings/icons.html.ts, by the SWARM master of the same meaning (32 grid,
+# stroked, .42 inner face). The Views icons (toolbar, app menu, address bar)
+# are .icon files copied in from swarm/brand/tree by install_swarm_assets.py.
+# This patch is generated on top of swarm-ui-logos.patch (CHAINED), which
+# edits the same file.
+def edit_settings_icons(text, path):
+    import re as _re
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / 'swarm' / 'brand'))
+    import icons_ui
+    for master, gid in icons_ui.SETTINGS_ICONS.items():
+        pattern = _re.compile(r'<g id="%s"[^>]*>.*?</g>' % _re.escape(gid), _re.S)
+        n = len(pattern.findall(text))
+        if n == 0:
+            raise SystemExit(f'{path}: no <g id="{gid}"> -- upstream changed')
+        # Nested <g> inside an icon would end the match early; none of these has one.
+        new = icons_ui.settings_iconset_g(master, gid)
+        text = pattern.sub(lambda _m: new, text)
+    return text
+
+
+# Patches whose diff is taken against the file as the earlier SWARM patches
+# leave it, because an earlier patch edits the same file.
+CHAINED = {'swarm-ui-icons.patch'}
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -756,12 +785,16 @@ PATCHES = {
         'components/webui/chrome_urls/resources/chrome_urls.html': edit_chrome_urls_title,
         'components/webui/chrome_urls/resources/app.html.ts': edit_chrome_urls_heading,
     },
+    'swarm-ui-icons.patch': {
+        'chrome/browser/resources/settings/icons.html.ts': edit_settings_icons,
+    },
 }
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     total_hunks = 0
+    applied = {}  # relpath -> text after the patches generated so far
     for patch_name, targets in PATCHES.items():
         chunks = []
         for relpath, edit in targets.items():
@@ -769,7 +802,11 @@ def main():
             if not full.is_file():
                 raise SystemExit(f'missing from prepared tree: {relpath}')
             original = full.read_text(encoding='utf-8')
+            if patch_name in CHAINED:
+                # Diff against the file as the earlier SWARM patches leave it.
+                original = applied.get(relpath, original)
             modified = edit(original, relpath)
+            applied[relpath] = modified
             if modified == original:
                 raise SystemExit(f'{relpath}: edit produced no change')
             diff = list(difflib.unified_diff(
