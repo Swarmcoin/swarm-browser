@@ -589,6 +589,40 @@ def edit_chrome_url_hosts(text, path):
                path)
 
 
+# ------------------------------------------------ 7. SWARM buttons pinned
+# The toolbar shows an extension's button only when its id is in the profile
+# pref extensions.pinned_extensions. ExtensionPrefs::GetPinnedExtensions()
+# reads only a USER-set value (GetUserPrefValue), so a registered default
+# would be ignored. Instead: while the person has never pinned or unpinned
+# anything, the pinned list is the SWARM Navigator's button and the wallet.
+# The first pin, unpin or move writes the full list (SetPinnedExtensions), and
+# from then on the person's own list is the only one.
+SWARM_WALLET_ID = 'gmmgmodmgnigcgboccjelpgedejejfap'
+
+
+def edit_pinned_extensions(text, path):
+    return sub(text,
+               'ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {\n'
+               '  ExtensionIdList id_list_out;\n'
+               '  GetUserExtensionPrefIntoContainer(pref_names::kPinnedExtensions,\n'
+               '                                    &id_list_out);\n'
+               '  return id_list_out;\n'
+               '}\n',
+               'ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {\n'
+               '  ExtensionIdList id_list_out;\n'
+               '  if (!GetUserExtensionPrefIntoContainer(pref_names::kPinnedExtensions,\n'
+               '                                         &id_list_out)) {\n'
+               '    // SWARM: until the person pins or unpins anything, the SWARM\n'
+               '    // Navigator (SWARM Start) and SWARM Wallet buttons are pinned.\n'
+               '    // Ids that are not installed are skipped by the toolbar model.\n'
+               f'    id_list_out = {{"{SWARM_START_ID}",\n'
+               f'                   "{SWARM_WALLET_ID}"}};\n'
+               '  }\n'
+               '  return id_list_out;\n'
+               '}\n',
+               path)
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -634,6 +668,9 @@ PATCHES = {
         'chrome/browser/chrome_browser_main.cc': edit_first_run_tab,
         'chrome/browser/ui/webui/ungoogled_first_run.h': edit_first_run_page,
         'chrome/common/webui_url_constants.cc': edit_chrome_url_hosts,
+    },
+    'swarm-toolbar-pins.patch': {
+        'extensions/browser/extension_prefs.cc': edit_pinned_extensions,
     },
 }
 

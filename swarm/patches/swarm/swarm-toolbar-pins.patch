@@ -1,0 +1,19 @@
+--- a/extensions/browser/extension_prefs.cc
++++ b/extensions/browser/extension_prefs.cc
+@@ -1478,8 +1478,14 @@
+ 
+ ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {
+   ExtensionIdList id_list_out;
+-  GetUserExtensionPrefIntoContainer(pref_names::kPinnedExtensions,
+-                                    &id_list_out);
++  if (!GetUserExtensionPrefIntoContainer(pref_names::kPinnedExtensions,
++                                         &id_list_out)) {
++    // SWARM: until the person pins or unpins anything, the SWARM
++    // Navigator (SWARM Start) and SWARM Wallet buttons are pinned.
++    // Ids that are not installed are skipped by the toolbar model.
++    id_list_out = {"fopmngfcphleeiffnfhhahdhafgimnei",
++                   "gmmgmodmgnigcgboccjelpgedejejfap"};
++  }
+   return id_list_out;
+ }
+ 
