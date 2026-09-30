@@ -814,6 +814,18 @@ def edit_default_search(text, path):
                path)
 
 
+# --------------------------------------------- 14. no NTP footer (build 6)
+# Chromium draws a footer under an extension-controlled new-tab page (the
+# extension's name and a "Customize" pencil). SWARM Start is the browser's own
+# new-tab page, so the footer is off by default; the feature stays a flag.
+def edit_ntp_footer(text, path):
+    return sub(text,
+               'BASE_FEATURE(kNtpFooter, base::FEATURE_ENABLED_BY_DEFAULT);',
+               '// SWARM: off -- SWARM Start is the new-tab page, not an add-on to it.\n'
+               'BASE_FEATURE(kNtpFooter, base::FEATURE_DISABLED_BY_DEFAULT);',
+               path)
+
+
 # Patches whose diff is taken against the file as the earlier SWARM patches
 # leave it, because an earlier patch edits the same file.
 CHAINED = {'swarm-ui-icons.patch'}
@@ -888,6 +900,9 @@ PATCHES = {
     },
     'swarm-default-search.patch': {
         'components/search_engines/template_url_prepopulate_data.cc': edit_default_search,
+    },
+    'swarm-ntp-footer.patch': {
+        'components/search/ntp_features.cc': edit_ntp_footer,
     },
 }
 

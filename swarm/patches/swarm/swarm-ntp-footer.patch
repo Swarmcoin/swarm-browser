@@ -1,0 +1,12 @@
+--- a/components/search/ntp_features.cc
++++ b/components/search/ntp_features.cc
+@@ -281,7 +281,8 @@
+ BASE_FEATURE(kNtpOneGoogleBarAsyncBarParts, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, a footer will show on the NTP.
+-BASE_FEATURE(kNtpFooter, base::FEATURE_ENABLED_BY_DEFAULT);
++// SWARM: off -- SWARM Start is the new-tab page, not an add-on to it.
++BASE_FEATURE(kNtpFooter, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // If enabled, tab groups module will be shown.
+ BASE_FEATURE(kNtpTabGroupsModule,
