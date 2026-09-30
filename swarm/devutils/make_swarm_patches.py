@@ -371,6 +371,7 @@ def _extension_files(folder):
 WALLET_FILES = _extension_files('wallet')
 REWARDS_FILES = _extension_files('rewards')
 UPDATE_FILES = _extension_files('update')
+START_FILES = _extension_files('start')
 
 
 def _idr(prefix, relpath):
@@ -383,18 +384,19 @@ def edit_browser_resources_grd(text, path):
                '      <include name="IDR_READING_MODE_GDOCS_HELPER_MANIFEST" file="resources\\reading_mode_gdocs_helper\\manifest.json" type="BINDATA" />\n',
                '      <include name="IDR_READING_MODE_GDOCS_HELPER_MANIFEST" file="resources\\reading_mode_gdocs_helper\\manifest.json" type="BINDATA" />\n'
                '\n'
-               '      <!-- SWARM: the three bundled SWARM component extensions. The folders\n'
+               '      <!-- SWARM: the four bundled SWARM component extensions. The folders\n'
                '           are copied in by swarm/install_swarm_assets.py. -->\n'
                '      <include name="IDR_SWARM_WALLET_MANIFEST" file="resources\\swarm_wallet\\manifest.json" type="BINDATA" />\n'
                '      <include name="IDR_SWARM_REWARDS_MANIFEST" file="resources\\swarm_rewards\\manifest.json" type="BINDATA" />\n'
-               '      <include name="IDR_SWARM_UPDATE_MANIFEST" file="resources\\swarm_update\\manifest.json" type="BINDATA" />\n',
+               '      <include name="IDR_SWARM_UPDATE_MANIFEST" file="resources\\swarm_update\\manifest.json" type="BINDATA" />\n'
+               '      <include name="IDR_SWARM_START_MANIFEST" file="resources\\swarm_start\\manifest.json" type="BINDATA" />\n',
                path)
 
 
 def edit_component_extension_resources_grd(text, path):
     lines = ['\n',
-             '      <!-- SWARM: bundled SWARM Wallet, SWARM Rewards and SWARM Update\n'
-             '           extension files.\n'
+             '      <!-- SWARM: bundled SWARM Wallet, SWARM Rewards, SWARM Update and\n'
+             '           SWARM Start extension files.\n'
              '           The resource path prefix must match the root_directory passed to\n'
              '           ComponentLoader::Add() in component_loader.cc. -->\n']
     for relpath in WALLET_FILES:
@@ -406,6 +408,9 @@ def edit_component_extension_resources_grd(text, path):
     for relpath in UPDATE_FILES:
         lines.append(f'      <include name="{_idr("SWARM_UPDATE", relpath)}" '
                      f'file="swarm_update/{relpath}" type="BINDATA" />\n')
+    for relpath in START_FILES:
+        lines.append(f'      <include name="{_idr("SWARM_START", relpath)}" '
+                     f'file="swarm_start/{relpath}" type="BINDATA" />\n')
     anchor = ('      <include name="IDR_READING_MODE_GDOC_HELPER_GDOCS_SCRIPT_JS" '
               'file="reading_mode_gdocs_helper/gdocs_script.js" type="BINDATA" />\n')
     return sub(text, anchor, anchor + ''.join(lines), path)
@@ -415,7 +420,8 @@ def edit_resources_build_gn(text, path):
     inputs = ''.join(
         [f'      "swarm_wallet/{f}",\n' for f in ['manifest.json'] + WALLET_FILES] +
         [f'      "swarm_rewards/{f}",\n' for f in ['manifest.json'] + REWARDS_FILES] +
-        [f'      "swarm_update/{f}",\n' for f in ['manifest.json'] + UPDATE_FILES])
+        [f'      "swarm_update/{f}",\n' for f in ['manifest.json'] + UPDATE_FILES] +
+        [f'      "swarm_start/{f}",\n' for f in ['manifest.json'] + START_FILES])
     anchor = ('      "reading_mode_gdocs_helper/content.js",\n'
               '      "reading_mode_gdocs_helper/gdocs_script.js",\n')
     return sub(text, anchor,
@@ -428,7 +434,7 @@ def edit_component_loader_h(text, path):
                '  void AddContextualTasksExtension();\n',
                '  void AddContextualTasksExtension();\n'
                '\n'
-               '  // SWARM: the three bundled SWARM component extensions.\n'
+               '  // SWARM: the four bundled SWARM component extensions.\n'
                '  void AddSwarmExtensions();\n',
                path)
 
@@ -436,8 +442,8 @@ def edit_component_loader_h(text, path):
 def edit_component_loader_cc(text, path):
     text = sub(text,
                'void ComponentLoader::AddWebStoreApp() {\n',
-               '// SWARM: SWARM Wallet, SWARM Rewards and SWARM Update are bundled as\n'
-               '// component extensions. Their ids are fixed by the "key" field in their\n'
+               '// SWARM: SWARM Wallet, SWARM Rewards, SWARM Update and SWARM Start are\n'
+               '// bundled as component extensions. Their ids are fixed by the "key" field in their\n'
                '// manifests and are recorded in swarm/README.md. The folders under\n'
                '// chrome/browser/resources are put there by swarm/install_swarm_assets.py\n'
                '// and turned into resources by component_extension_resources.grd.\n'
@@ -448,6 +454,10 @@ def edit_component_loader_cc(text, path):
                '      base::FilePath(FILE_PATH_LITERAL("swarm_rewards")));\n'
                '  Add(IDR_SWARM_UPDATE_MANIFEST,\n'
                '      base::FilePath(FILE_PATH_LITERAL("swarm_update")));\n'
+               '  // SWARM Start: the new-tab page, the SWARM Navigator side panel and\n'
+               '  // the welcome page that swarm-first-run.patch opens on first start.\n'
+               '  Add(IDR_SWARM_START_MANIFEST,\n'
+               '      base::FilePath(FILE_PATH_LITERAL("swarm_start")));\n'
                '}\n'
                '\n'
                'void ComponentLoader::AddWebStoreApp() {\n',
@@ -463,7 +473,7 @@ def edit_component_loader_cc(text, path):
                '  }\n'
                '\n'
                '  if (!skip_session_components) {\n'
-               '    // SWARM: bundled SWARM Wallet, SWARM Rewards and SWARM Update.\n'
+               '    // SWARM: bundled SWARM Wallet, Rewards, Update and Start.\n'
                '    AddSwarmExtensions();\n',
                path)
     return text
@@ -474,8 +484,9 @@ def edit_allowlist(text, path):
                '    case IDR_READING_MODE_GDOCS_HELPER_MANIFEST:\n'
                '    case IDR_WEBSTORE_MANIFEST:\n',
                '    case IDR_READING_MODE_GDOCS_HELPER_MANIFEST:\n'
-               '    // SWARM: the three bundled SWARM component extensions.\n'
+               '    // SWARM: the four bundled SWARM component extensions.\n'
                '    case IDR_SWARM_REWARDS_MANIFEST:\n'
+               '    case IDR_SWARM_START_MANIFEST:\n'
                '    case IDR_SWARM_UPDATE_MANIFEST:\n'
                '    case IDR_SWARM_WALLET_MANIFEST:\n'
                '    case IDR_WEBSTORE_MANIFEST:\n',

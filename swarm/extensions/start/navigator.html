@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>SWARM Navigator</title>
+    <link rel="stylesheet" href="start.css" />
+    <script type="module" src="navigator.js"></script>
+  </head>
+  <body>
+    <main class="nav">
+      <div class="nav__head">
+        <svg viewBox="0 0 1000 467.95" aria-hidden="true"><use href="icons.svg#i-mark-color" /></svg>
+        <h1>SWARM Navigator</h1>
+      </div>
+
+      <h2 id="go-title">Go to</h2>
+      <ul class="nav__list" id="destinations" aria-labelledby="go-title"></ul>
+
+      <h2 id="wallet-title">Wallet</h2>
+      <div class="card" aria-labelledby="wallet-title">
+        <div class="head">
+          <svg class="ico" aria-hidden="true"><use href="icons.svg#i-wallet" /></svg>
+          <strong>SWARM Wallet</strong>
+          <span class="net">SWARM mainnet</span>
+        </div>
+        <p>Balance, receive and send live in the wallet itself. It is also the wallet button beside the address bar.</p>
+        <div><button class="btn btn--honey" type="button" id="open-wallet">Open your wallet</button></div>
+      </div>
+
+      <h2 id="update-title">Updates</h2>
+      <div class="card" aria-labelledby="update-title">
+        <div class="head">
+          <svg class="ico" aria-hidden="true"><use href="icons.svg#i-update" /></svg>
+          <strong>SWARM Update</strong>
+        </div>
+        <p>Checks swarm.green once a day for a new SWARM Browser and tells you. It never downloads or installs anything by itself.</p>
+        <div><button class="btn" type="button" id="open-update">See the update status</button></div>
+      </div>
+
+      <div class="nav__links">
+        <a href="welcome.html" id="link-welcome">Welcome page</a>
+        <a href="privacy.html" id="link-privacy">Privacy switches that are on</a>
+      </div>
+    </main>
+  </body>
+</html>

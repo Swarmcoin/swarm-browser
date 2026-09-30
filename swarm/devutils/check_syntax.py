@@ -155,7 +155,8 @@ if (SRC / 'chrome' / 'browser' / 'browser_resources.grd').is_file():
             bad('xml', rel, exc)
     for rel in ['chrome/browser/resources/swarm_wallet/manifest.json',
                 'chrome/browser/resources/swarm_rewards/manifest.json',
-                'chrome/browser/resources/swarm_update/manifest.json']:
+                'chrome/browser/resources/swarm_update/manifest.json',
+                'chrome/browser/resources/swarm_start/manifest.json']:
         p = SRC / rel
         try:
             json.loads(p.read_text(encoding='utf-8'))
@@ -213,7 +214,7 @@ if (SRC / 'chrome' / 'browser' / 'browser_resources.grd').is_file():
     browser_grd = (SRC / 'chrome/browser/browser_resources.grd').read_text(encoding='utf-8')
     build_gn = (SRC / 'chrome/browser/resources/BUILD.gn').read_text(encoding='utf-8')
     for folder, dirname in (('wallet', 'swarm_wallet'), ('rewards', 'swarm_rewards'),
-                            ('update', 'swarm_update')):
+                            ('update', 'swarm_update'), ('start', 'swarm_start')):
         label = f'{folder:7} -> {dirname}'
         try:
             source = ROOT / 'swarm' / 'extensions' / folder

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" class="bg motion">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>New Tab</title>
+    <link rel="stylesheet" href="start.css" />
+    <script type="module" src="newtab.js"></script>
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true">
+      <div class="glow"></div>
+      <div class="comb"></div>
+      <div class="motes"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="start">
+      <div class="start__top">
+        <button
+          id="settings-button"
+          class="icon-button"
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls="settings"
+          title="Start page settings"
+        >
+          <svg class="ico" aria-hidden="true"><use href="icons.svg#i-gear" /></svg>
+          <span class="sr">Start page settings</span>
+        </button>
+        <div id="settings" class="popover" role="dialog" aria-labelledby="settings-title" hidden>
+          <h2 id="settings-title">Start page</h2>
+          <div class="switch">
+            <label for="set-background">Background</label>
+            <input id="set-background" type="checkbox" role="switch" data-key="background" />
+            <p class="hint">The SWARM comb and glow behind this page.</p>
+          </div>
+          <div class="switch">
+            <label for="set-motion">Motion</label>
+            <input id="set-motion" type="checkbox" role="switch" data-key="motion" />
+            <p class="hint">A slow drift of the comb. Always still when Windows asks for less motion.</p>
+          </div>
+          <div class="switch">
+            <label for="set-network">Network now</label>
+            <input id="set-network" type="checkbox" role="switch" data-key="networkTile" />
+            <p class="hint">
+              Off by default: a new tab asks no server anything. When on, each new tab reads the current block height
+              and the nodes online from lwd-main.swarm.green and swarm.green. Nothing about you is sent.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <main class="start__main">
+        <div class="hero">
+          <svg viewBox="0 0 1000 467.95" role="img" aria-label="SWARM"><use href="icons.svg#i-mark-color" /></svg>
+          <span class="wordmark" aria-hidden="true">SWARM</span>
+        </div>
+
+        <form id="search" class="search" role="search" autocomplete="off">
+          <svg class="ico" aria-hidden="true"><use href="icons.svg#i-search" /></svg>
+          <label for="q" class="sr">Search or type an address</label>
+          <input id="q" name="q" type="text" spellcheck="false" placeholder="Search or type an address" />
+          <button class="btn btn--honey" type="submit">Go</button>
+        </form>
+        <p class="search-note">
+          Searches go to the browser's default search engine.
+          <button type="button" id="choose-engine">Choose it in Settings</button>
+        </p>
+
+        <nav class="shortcuts" aria-label="SWARM shortcuts">
+          <ul id="shortcuts"></ul>
+        </nav>
+
+        <section class="tiles" aria-label="At a glance">
+          <article class="tile" id="tile-wallet" aria-labelledby="tile-wallet-title">
+            <div class="tile__head">
+              <svg class="ico" aria-hidden="true"><use href="icons.svg#i-wallet" /></svg>
+              <h2 id="tile-wallet-title">Wallet</h2>
+              <span class="net">SWARM mainnet</span>
+            </div>
+            <p>Your SWARM Wallet is the button beside the address bar. Open it to see your balance and the latest block.</p>
+            <div class="actions">
+              <button class="btn btn--honey" type="button" id="open-wallet">Open your wallet</button>
+            </div>
+          </article>
+
+          <article class="tile" id="tile-privacy" aria-labelledby="tile-privacy-title">
+            <div class="tile__head">
+              <svg class="ico" aria-hidden="true"><use href="icons.svg#i-shield" /></svg>
+              <h2 id="tile-privacy-title">Privacy</h2>
+            </div>
+            <p class="figure"><span id="privacy-count">7</span><small id="privacy-label">privacy switches on</small></p>
+            <p>Switched on in this browser from the first start.</p>
+            <div class="actions"><a class="btn" href="privacy.html">See what is on</a></div>
+          </article>
+
+          <article class="tile" id="tile-network" aria-labelledby="tile-network-title" aria-live="polite">
+            <div class="tile__head">
+              <svg class="ico" aria-hidden="true"><use href="icons.svg#i-node" /></svg>
+              <h2 id="tile-network-title">Network now</h2>
+              <span class="net">SWARM mainnet</span>
+            </div>
+            <div id="network-off">
+              <p>Off. This page asks no server anything until you turn this on.</p>
+              <div class="actions"><button class="btn" type="button" id="network-on">Turn on</button></div>
+            </div>
+            <div id="network-on-view" hidden>
+              <div class="row">
+                <p class="figure"><span id="net-height">—</span><small>block height</small></p>
+                <p class="figure"><span id="net-nodes">—</span><small>nodes online</small></p>
+              </div>
+              <p class="fine" id="net-updated"></p>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <footer class="start__foot">
+        SWARM Browser · <a href="welcome.html">Welcome</a> · <a href="privacy.html">Privacy switches</a>
+      </footer>
+    </div>
+  </body>
+</html>

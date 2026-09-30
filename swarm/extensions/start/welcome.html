@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" class="bg">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Welcome to SWARM Browser</title>
+    <link rel="stylesheet" href="start.css" />
+    <script type="module" src="doc.js"></script>
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"><div class="glow"></div><div class="comb"></div></div>
+    <main class="doc">
+      <div class="doc__brand">
+        <svg viewBox="0 0 1000 467.95" aria-hidden="true"><use href="icons.svg#i-mark-color" /></svg>
+        <span>SWARM BROWSER</span>
+      </div>
+      <h1>Welcome to SWARM Browser</h1>
+      <p class="lede">
+        A web browser with the SWARM wallet built in and privacy switches on from the first start. Everything below
+        takes a minute to read.
+      </p>
+
+      <section aria-labelledby="wallet-title">
+        <h2 id="wallet-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-wallet" /></svg>Your wallet is in the toolbar</h2>
+        <p>
+          The SWARM Wallet button sits to the right of the address bar. Click it to create a wallet, restore one from
+          its recovery phrase, or open yours. It works on SWARM mainnet.
+        </p>
+        <p>
+          Your keys stay on this computer, in a small wallet program that came with the browser; the browser itself
+          never holds them.
+        </p>
+        <p><button class="btn btn--honey" type="button" data-action="wallet">Open your wallet</button></p>
+      </section>
+
+      <section aria-labelledby="nav-title">
+        <h2 id="nav-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-panel" /></svg>The SWARM Navigator</h2>
+        <p>
+          The SWARM mark in the toolbar opens the Navigator on the side of the window: swarm.green, the Explorer, your
+          wallet, the Messenger, node and mining, the Market and Support, in one place.
+        </p>
+        <p>
+          Both SWARM buttons are pinned when you start. If you unpin one, open the Extensions menu (the puzzle piece
+          to the right of the address bar) and click the pin next to <strong>SWARM Start</strong> for the Navigator,
+          or next to <strong>SWARM Wallet</strong>.
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-title">
+        <h2 id="privacy-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-shield" /></svg>Privacy switches that are on</h2>
+        <ul class="switch-list" data-switch-list="short"></ul>
+        <p><button class="btn" type="button" data-action="privacy">See the details</button></p>
+      </section>
+
+      <section aria-labelledby="start-title">
+        <h2 id="start-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-comb" /></svg>Every new tab</h2>
+        <p>
+          A new tab opens SWARM Start: a search box, SWARM shortcuts and a few tiles. It asks no server anything
+          unless you turn on “Network now” in its settings (the gear at the top right).
+        </p>
+        <p>
+          Searches go to the browser's default search engine.
+          <button class="btn" type="button" data-action="settings-search">Choose your search engine</button>
+        </p>
+      </section>
+
+      <section aria-labelledby="update-title">
+        <h2 id="update-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-update" /></svg>Where updates come from</h2>
+        <p>
+          SWARM Browser does not update itself yet. A new version is a new download from swarm.green. SWARM Update
+          checks once a day and tells you when one is out; it never downloads or installs anything by itself.
+        </p>
+        <p><button class="btn" type="button" data-action="update">Open SWARM Update</button></p>
+      </section>
+
+      <div class="actions">
+        <a class="btn btn--honey" href="https://swarm.green/ecosystem/browser">SWARM Browser on swarm.green</a>
+        <a class="btn" href="newtab.html">Go to SWARM Start</a>
+      </div>
+    </main>
+  </body>
+</html>

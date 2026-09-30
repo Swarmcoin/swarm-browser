@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" class="bg">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Privacy switches · SWARM Browser</title>
+    <link rel="stylesheet" href="start.css" />
+    <script type="module" src="doc.js"></script>
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"><div class="glow"></div><div class="comb"></div></div>
+    <main class="doc">
+      <div class="doc__brand">
+        <svg viewBox="0 0 1000 467.95" aria-hidden="true"><use href="icons.svg#i-mark-color" /></svg>
+        <span>SWARM BROWSER</span>
+      </div>
+      <h1>What is switched on</h1>
+      <p class="lede">
+        SWARM Browser starts with these <span data-switch-count>privacy switches on</span>. They are part of the
+        browser itself, not an add-on, and they are on for every profile from the first start.
+      </p>
+
+      <section aria-labelledby="on-title">
+        <h2 id="on-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-shield" /></svg>On</h2>
+        <ul class="switch-list" data-switch-list="full"></ul>
+      </section>
+
+      <section aria-labelledby="notyet-title">
+        <h2 id="notyet-title"><svg class="ico" aria-hidden="true"><use href="icons.svg#i-lock" /></svg>Not there yet</h2>
+        <ul data-not-yet></ul>
+        <p>Take the usual care with links and downloads from people you do not know.</p>
+      </section>
+
+      <div class="actions">
+        <button class="btn" type="button" data-action="settings-privacy">Open privacy settings</button>
+        <button class="btn" type="button" data-action="welcome">Welcome page</button>
+      </div>
+    </main>
+  </body>
+</html>

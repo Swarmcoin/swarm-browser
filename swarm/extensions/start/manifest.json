@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "SWARM Start",
+  "short_name": "SWARM Start",
+  "version": "0.1.0",
+  "description": "The SWARM start page for new tabs, the SWARM Navigator side panel and the welcome page. Asks no server anything unless you turn on its live network tile.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA07FBXVTPocD6qcAsyZmvoxAlPyZv8kLyHUdRi1cbVKTFEMuQv1QR6h6a6+lJY1hY/yTWafeR2y3Qofp5jGwQ8NpJ7U8WYFZBtV5Fx6w/EIS55yRGtjtws4VBEsjNQCZsRvVXLc3lQVU8PIsF4D4SDxTzLFRpgkdvdRgalyqvYkln11IKX1VxVln97nl01uvRB3JCGlKoV1zzKf/PuLnDdvvEVmBtcoPi+LExE/8NHkVfkqBbwOOI/frT7n/0LC20VfMaKOaebg9HpRo5LceOADlnUkT3dr+zdrTig+HvreH/EcbPf9BX9fDJ0xHte4ybagE83EhkBhJ8K6idiHYBrwIDAQAB",
+  "minimum_chrome_version": "153",
+  "permissions": ["storage", "sidePanel", "search"],
+  "host_permissions": ["https://lwd-main.swarm.green/status.json", "https://swarm.green/data/swarm-map-live.json"],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "action": {
+    "default_title": "SWARM Navigator",
+    "default_icon": {
+      "16": "icons/start-16.png",
+      "32": "icons/start-32.png",
+      "48": "icons/start-48.png",
+      "128": "icons/start-128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "navigator.html"
+  },
+  "icons": {
+    "16": "icons/start-16.png",
+    "32": "icons/start-32.png",
+    "48": "icons/start-48.png",
+    "128": "icons/start-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://lwd-main.swarm.green https://swarm.green; img-src 'self'; font-src 'self'; style-src 'self'"
+  },
+  "content_scripts": [],
+  "web_accessible_resources": []
+}

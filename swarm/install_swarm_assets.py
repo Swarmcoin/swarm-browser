@@ -72,6 +72,7 @@ BUNDLED_EXTENSIONS = {
     'wallet': 'swarm_wallet',
     'rewards': 'swarm_rewards',
     'update': 'swarm_update',
+    'start': 'swarm_start',
 }
 
 # SWARM: the update extension learns which build it is part of from its
