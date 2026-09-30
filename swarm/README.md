@@ -8,7 +8,7 @@ The rule is simple and it is the whole point of the layout:
 > `build.py` and `package.py`, every one of them marked `# SWARM`.
 
 That keeps a rebase onto the next Chromium release a submodule bump plus a
-re-check of this layer's own 52 hunks, instead of a merge across ungoogled's
+re-check of this layer's own 54 hunks, instead of a merge across ungoogled's
 several hundred.
 
 Upstream provenance of this checkout:
@@ -18,7 +18,7 @@ Upstream provenance of this checkout:
 | `ungoogled-chromium-windows` tag | `153.0.8010.52-1.1`, commit `4fe389fe08dac85cead3ea77afe59834dbbc9673` |
 | `ungoogled-chromium` submodule | tag `153.0.8010.52-1`, commit `a638756eb14c8b6ce64b4b2a067afea5d4207bf4` |
 | Chromium | `153.0.8010.52` (`ungoogled-chromium/chromium_version.txt`) |
-| SWARM layer build | `swarm/revision.txt` (currently `3`: build 5, with SWARM Start, the SWARM welcome page and the branding pass. `2` was the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-3-`) |
+| SWARM layer build | `swarm/revision.txt` (currently `4`: build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-4-`) |
 
 Licences: upstream `LICENSE` files are untouched. The SWARM notices, and the
 BSD-3 notices for Chromium and ungoogled-chromium, are in `NOTICE-SWARM.md` at
@@ -41,6 +41,8 @@ swarm/
   patches/swarm/swarm-ui-names.patch
   patches/swarm/swarm-ui-icons.patch
   patches/swarm/swarm-webui-colour.patch
+  patches/swarm/swarm-default-search.patch
+  patches/swarm/swarm-ntp-footer.patch
   brand/render_icons.py                re-cuts the SWARM mark into Chromium's icon set
   brand/icons/                         the rendered result (binary, copied in, not patched)
   brand/render_ui_logos.py             re-cuts the mark into the logos drawn INSIDE the UI
@@ -81,7 +83,7 @@ And the six marked hooks outside it:
 | `package.py` | call `install_bundled_host()` on `out/Default` before packaging (again; it leaves up-to-date files alone) |
 | `package.py` | name the outputs `SWARM-Browser-<chromium>-<swarm>-win-<arch>.{exe,zip}` |
 
-## The twelve patches
+## The fourteen patches
 
 | Patch | Files | Hunks | What it does |
 | --- | --- | --- | --- |
@@ -97,9 +99,11 @@ And the six marked hooks outside it:
 | `swarm-ui-names.patch` | 2 | 2 | chrome://chrome-urls is titled "SWARM Browser pages" (build 5) |
 | `swarm-ui-icons.patch` | 1 | 10 | the Settings sidebar icons are SWARM's (build 5; generated on top of `swarm-ui-logos.patch`) |
 | `swarm-webui-colour.patch` | 1 | 7 | the WebUI pages' fallback accent and blue palette are SWARM amber (build 5) |
+| `swarm-default-search.patch` | 1 | 1 | the default search engine is DuckDuckGo, suggestions off (build 6) |
+| `swarm-ntp-footer.patch` | 1 | 1 | no Chromium footer under the new-tab page (build 6) |
 
 Applied in that order (`swarm/patches/series`), after both upstream series.
-26 distinct files, 52 hunks; `launch_context_win.cc` and
+28 distinct files, 54 hunks; `launch_context_win.cc` and
 `settings/icons.html.ts` are each touched by two patches (the second of each
 pair is generated against the first). `swarm-first-run.patch` changes three lines that
 ungoogled-chromium's own `first-run-page.patch` put in the tree; the upstream
@@ -479,14 +483,44 @@ default), and the touch variants in touch mode; both are replaced.
 
 The exact file list is `TARGETS` and `SETTINGS_ICONS` in `icons_ui.py` (50
 `.icon` files from 32 masters; 15 Settings entries, each replaced in every
-iconset of the file). Not redrawn yet: the tab strip (new-tab plus, tab close,
-audio and mute), the submenus of the app menu (More tools, Help, Cast, save and
-share), the side panel's header buttons, page-content illustrations such as the
-empty Downloads picture, and the tab favicons of internal pages that bring their
-own (Settings' gear, History's clock).
+iconset of the file); build 6 added the tab strip, the side panel header,
+the install-app icon, the app-menu submenus and the empty-Downloads
+illustration (above). Still Chromium's: the tab favicons of internal pages
+that bring their own (Settings' gear, History's clock) and icons of surfaces
+no one has listed yet.
 
 **Names (`swarm-ui-names.patch`).** `chrome://chrome-urls` writes its title
 and heading as literals in its page files; they become "SWARM Browser pages".
+
+### Build 6: default search, no footer, the rest of the icons
+
+**`swarm-default-search.patch`.** ungoogled-chromium's
+`replace-google-search-engine-with-nosearch.patch` turns the Google entry into
+"No Search" (`search_url` `http://{searchTerms}`), and the fallback default
+search engine is looked up by `google.id`, so a search typed in the address
+bar or on SWARM Start opened `http://<the words>/`.
+`GetPrepopulatedFallbackSearch()` now returns DuckDuckGo (prepopulated id 92,
+`https://duckduckgo.com/?q={searchTerms}`), looked up in the full built-in list
+(11 regional lists do not carry it), with its suggestion URL cleared so nothing
+is sent while typing. It is only the fallback: an engine picked in Settings,
+Search engine, wins. SWARM Start keeps its generic sentence ("Searches go to the
+browser's default search engine"): no extension API reads the current default
+engine, so the page cannot know that the person has not changed it.
+
+**`swarm-ntp-footer.patch`.** `ntp_features::kNtpFooter` defaults to off:
+Chromium's footer (the controlling extension's name and a "Customize" pencil)
+no longer appears under SWARM Start pages. It stays a flag.
+
+**The rest of the icons.** Same masters folder, same converter: the tab strip
+(new-tab plus, tab close, audio, mute, tab search), the side panel header (pin,
+unpin, close), the address bar's install-app icon, the app menu's submenus
+(More tools, Help, Cast save and share, Bookmarks and lists, Passwords and
+autofill, the profile rows) and the empty-Downloads illustration
+(`icons-ui/illustrations/no-downloads.svg`, copied to
+`chrome/browser/resources/downloads/images/no_downloads.svg`). 90 masters,
+113 `.icon` files, 15 Settings entries, 1 illustration. Several of the
+replaced files are shared (the close X, the pencil, the search glass, the
+warning triangle), so every surface that draws them changes with them.
 
 ### `swarm-installer-host.patch` (1 file, 1 hunk)
 
@@ -650,6 +684,67 @@ One file in the wallet, `icons/swarm-mark.svg`, is referenced by nothing; it is
 copied because the rule here is to take the folder as it stands rather than to
 curate it, and its absence would be the kind of difference that is hard to
 explain later.
+
+## Open
+
+### A live wallet tile: the proposed messaging contract (for the wallet workstream)
+
+SWARM Start and the Navigator show no balance or block height, because the
+bundled SWARM Wallet answers no other extension except SWARM Rewards. This is
+the smallest contract that would let them, proposed here and **not
+implemented**: the wallet is developed in `privacy-wallet-browser`, and this
+repository only copies it.
+
+1. **Manifest** (`browser/extension/manifest.json` over there): add SWARM
+   Start's id to `externally_connectable.ids`:
+   ```json
+   "externally_connectable": {
+     "ids": ["gjmgdanakkpkgpmecnecoliifonlapnb", "fopmngfcphleeiffnfhhahdhafgimnei"]
+   }
+   ```
+   Still no `matches`: no web page can connect.
+2. **One command**, answered in the existing `chrome.runtime.onMessageExternal`
+   listener, beside (not through) the Rewards address door:
+   request `{ "type": "swarm.summary" }` from sender id
+   `fopmngfcphleeiffnfhhahdhafgimnei` only (checked in code as well as in the
+   manifest, like `mayAnswerRewards`); any other type or sender gets
+   `{ ok: false, error: { code: "refused" } }`.
+   Answer, built field by field so it cannot grow:
+   ```json
+   { "ok": true, "result": {
+       "network": "SWARM mainnet",
+       "height": 5173,
+       "state": "no_wallet | locked | unlocked | host_missing",
+       "balance": { "shielded_zat": 0, "transparent_zat": 0 } } }
+   ```
+   `network` and `height` come from the host's `status`; `state` from
+   `status` / `wallet.exists`. `balance` is present **only** when the wallet is
+   unlocked **and** the person has said yes (rule 3); otherwise the key is
+   absent. Never included: addresses, history, keys, the recovery phrase, the
+   wallet folder.
+3. **Consent**: a stored flag `startSummaryConsent`, `"granted"` or
+   `"refused"`, asked once in the wallet popup the first time SWARM Start asks
+   while unlocked ("Show your balance on SWARM Start and the Navigator?"),
+   revocable in the wallet's Settings. Network, height and state need no
+   consent (they are public or say nothing about the person).
+4. **Rate**: at most one host round-trip per 10 seconds; a newer call inside
+   that window gets the cached answer, so a burst of new tabs does not wake the
+   host repeatedly.
+
+On the SWARM Start side it is one `chrome.runtime.sendMessage(WALLET_ID,
+{type: "swarm.summary"})` with a timeout, and the tiles keep their current text
+when the answer is missing or refused.
+
+### Menus in the off-screen smoke test
+
+The app menu, the profile menu and the page-info bubble cannot be photographed
+by the off-screen smoke test: an off-screen window is never the active one, so
+Windows takes the mouse capture back from a menu at once and a bubble is
+deactivated at once, and Chromium closes both. Posted clicks and a posted Alt+F
+were tried (build 5 and 6). A browser-side switch that keeps menus and bubbles
+open was considered and rejected: it would weaken a safety behaviour (bubbles
+include permission prompts) in the shipped browser. These surfaces are checked
+by the owner by hand.
 
 ## Extension ids
 
