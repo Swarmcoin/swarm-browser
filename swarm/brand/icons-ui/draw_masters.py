@@ -103,6 +103,85 @@ ICONS['dangerous'] = (f'<path d="{HEX}" fill="currentColor" stroke="none"' + FAI
 ICONS['star-filled'] = ('<path d="M16 4.4l3.5 7.1 7.9 1.2-5.7 5.5 1.3 7.8L16 22.3 8.9 26l1.4-7.8-5.7-5.5 7.9-1.2Z" '
                         'fill="currentColor"/>')
 
+# ── build 6: tab strip, side panel, address bar, app-menu submenus ────
+PERSON = '<circle cx="13" cy="10.6" r="4.6"/><path d="M4.4 26c.6-5 3.8-8 8.6-8 2.2 0 4 .6 5.4 1.8"/>'
+SCREEN = '<rect x="3.4" y="5.4" width="25.2" height="16.8" rx="2.8"/><path d="M11.4 26.6h9.2M16 22.2v4.4"' + FAINT + '/>'
+ICONS.update({
+    'close': '<path d="M9.2 9.2l13.6 13.6M22.8 9.2 9.2 22.8"/>',
+    'add': '<path d="M16 6.4v19.2M6.4 16h19.2"/>',
+    'volume-up': ('<path d="M5.2 12.4h4.6l6.2-5.4v18l-6.2-5.4H5.2Z"/>'
+                  '<path d="M20.6 12a5.6 5.6 0 0 1 0 8M23.8 8.6a10.4 10.4 0 0 1 0 14.8"' + FAINT + '/>'),
+    'volume-off': ('<path d="M5.2 12.4h4.6l6.2-5.4v18l-6.2-5.4H5.2Z"/>'
+                   '<path d="M20.8 12.6l6 6.8M26.8 12.6l-6 6.8"/>'),
+    'pin': ('<path d="M11.6 4.6h8.8"/><path d="M13.2 4.6v7l-4 5.6h13.6l-4-5.6v-7"/>'
+            '<path d="M16 17.2v10.2"' + FAINT + '/>'),
+    'pin-off': ('<path d="M11.6 4.6h8.8"/><path d="M13.2 4.6v7l-4 5.6h13.6l-4-5.6v-7"' + FAINT + '/>'
+                '<path d="M16 17.2v10.2"' + FAINT + '/><path d="M5.2 5.2l21.6 21.6"/>'),
+    'install': (SCREEN + '<path d="M16 8.6v8"/><path d="M12.6 13.4 16 16.8l3.4-3.4"/>'),
+    'account-add': PERSON + '<path d="M24.4 17.6v8.4M20.2 21.8h8.4"/>',
+    'account-box': ('<rect x="4.4" y="4.4" width="23.2" height="23.2" rx="3.6"/>'
+                    '<circle cx="16" cy="13.2" r="4" ' + 'opacity=".42"/><path d="M8.8 25.6c1-3.8 3.6-5.8 7.2-5.8s6.2 2 7.2 5.8"/>'),
+    'account-manage': (PERSON + '<path d="M24.4 17.4l2.6 1.5v3l-2.6 1.5-2.6-1.5v-3Z"/>'
+                       '<circle cx="24.4" cy="20.4" r=".9" fill="currentColor" stroke="none"/>'),
+    'bookmark-all': ('<path d="M4.4 11.6h14.4M4.4 17.2h10.4M4.4 22.8h8"' + FAINT + '/>'
+                     '<path d="M23 12.8l2 4 4.4.7-3.2 3.1.8 4.4-4-2.1-4 2.1.8-4.4-3.2-3.1 4.4-.7Z"/>'),
+    'bookmarks-manager': ('<path d="M6.4 4.4h11.2v18.4l-5.6-4-5.6 4Z"/><path d="M21.6 10h6M21.6 15.2h6M21.6 20.4h6"' + FAINT + '/>'),
+    'bookmarks-panel': ('<rect x="3.8" y="5.4" width="24.4" height="21.2" rx="3.2"/><path d="M12.4 5.4v21.2"' + FAINT + '/>'
+                        '<path d="M16.6 10.4h7.2v10l-3.6-2.6-3.6 2.6Z"/>'),
+    'app-menu-update': (ICONS['app-menu'] + '<circle cx="25.2" cy="7.2" r="3.2" fill="currentColor" stroke="none"' + FAINT + '/>'),
+    'business': ('<path d="M4.8 27.2V6.4a1.6 1.6 0 0 1 1.6-1.6h9.6a1.6 1.6 0 0 1 1.6 1.6v20.8M17.6 12.8h8a1.6 1.6 0 0 1 1.6 1.6v12.8M3.2 27.2h25.6"/>'
+                 '<path d="M9.2 10h4.4M9.2 15.2h4.4M9.2 20.4h4.4M21.6 18.4h1.6M21.6 22.8h1.6"' + FAINT + '/>'),
+    'cast': ('<path d="M4.4 11V8a2.4 2.4 0 0 1 2.4-2.4h18.4A2.4 2.4 0 0 1 27.6 8v16a2.4 2.4 0 0 1-2.4 2.4h-6.8"/>'
+             '<path d="M4.4 16.4a10 10 0 0 1 10 10M4.4 21.6a4.8 4.8 0 0 1 4.8 4.8"' + FAINT + '/><circle cx="5.2" cy="25.6" r="1.4" fill="currentColor" stroke="none"/>'),
+    'copy': '<rect x="10.4" y="10.4" width="16.4" height="16.4" rx="2.4"/><path d="M21.6 10.4V7.6a2.4 2.4 0 0 0-2.4-2.4H7.6a2.4 2.4 0 0 0-2.4 2.4v11.6A2.4 2.4 0 0 0 7.6 21.6h2.8"' + FAINT + '/>',
+    'credit-card': '<rect x="3.6" y="7.2" width="24.8" height="17.6" rx="2.8"/><path d="M3.6 12.8h24.8"/><path d="M8 19.6h5.6"' + FAINT + '/>',
+    'cut': ('<circle cx="9.2" cy="22.8" r="3.6"/><circle cx="22.8" cy="22.8" r="3.6"/>'
+            '<path d="M11.6 20 24.4 4.4M20.4 20 7.6 4.4"' + FAINT + '/>'),
+    'dev-tools': ('<path d="M11.6 8.4 3.8 16l7.8 7.6M20.4 8.4 28.2 16l-7.8 7.6"/><path d="M18.4 5.2 13.6 26.8"' + FAINT + '/>'),
+    'devices': ('<path d="M18.4 22.2H6.2a2.8 2.8 0 0 1-2.8-2.8V8.2a2.8 2.8 0 0 1 2.8-2.8h17.6A2.8 2.8 0 0 1 26.6 8.2v2.2"/>'
+                '<path d="M9.4 26.6h9"' + FAINT + '/><rect x="21.2" y="13.2" width="7.4" height="13.4" rx="1.8"/>'),
+    'dock-left': '<rect x="3.8" y="5.4" width="24.4" height="21.2" rx="3.2"/><path d="M12.4 5.4v21.2"/><path d="M6.8 10h2.8M6.8 14h2.8"' + FAINT + '/>',
+    'dock-right': '<rect x="3.8" y="5.4" width="24.4" height="21.2" rx="3.2"/><path d="M19.6 5.4v21.2"/><path d="M22.4 10h2.8M22.4 14h2.8"' + FAINT + '/>',
+    'shortcut': ('<path d="M13.6 5.6H7.6a2 2 0 0 0-2 2v16.8a2 2 0 0 0 2 2h16.8a2 2 0 0 0 2-2v-6"' + FAINT + '/>'
+                 '<path d="M19.2 5.6h7.2v7.2M26.4 5.6 14.4 17.6"/>'),
+    'edit': '<path d="M20.8 5.6l5.6 5.6L11.6 26H6v-5.6Z"/><path d="M17.2 9.2l5.6 5.6"' + FAINT + '/>',
+    'fullscreen': '<path d="M4.8 11.2V4.8h6.4M20.8 4.8h6.4v6.4M27.2 20.8v6.4h-6.4M11.2 27.2H4.8v-6.4"/>',
+    'id-card': ('<rect x="3.6" y="6.4" width="24.8" height="19.2" rx="2.8"/><circle cx="11.2" cy="14" r="2.8"/>'
+                '<path d="M7 21.6c.6-2 2.2-3.2 4.2-3.2s3.6 1.2 4.2 3.2"/><path d="M19.2 12.8h5.6M19.2 17.2h5.6"' + FAINT + '/>'),
+    'link': ('<path d="M13.6 18.4a5.2 5.2 0 0 0 7.4 0l4.2-4.2a5.2 5.2 0 0 0-7.4-7.4l-1.6 1.6"/>'
+             '<path d="M18.4 13.6a5.2 5.2 0 0 0-7.4 0l-4.2 4.2a5.2 5.2 0 0 0 7.4 7.4l1.6-1.6"/>'),
+    'location': '<path d="M16 28.4s-9.2-8.6-9.2-15.6a9.2 9.2 0 0 1 18.4 0c0 7-9.2 15.6-9.2 15.6Z"/><path d="M16 9.4l3 1.7v3.4l-3 1.7-3-1.7v-3.4Z" fill="currentColor" stroke="none"' + FAINT + '/>',
+    'book': ('<path d="M16 8.8c-2.8-2.4-6.8-3.2-11.6-2.8v18.8c4.8-.4 8.8.4 11.6 2.8 2.8-2.4 6.8-3.2 11.6-2.8V6c-4.8-.4-8.8.4-11.6 2.8Z"/>'
+             '<path d="M16 8.8v18.8"' + FAINT + '/>'),
+    'name-window': ('<rect x="3.8" y="5.4" width="24.4" height="21.2" rx="3.2"/><path d="M3.8 11h24.4"' + FAINT + '/>'
+                    '<path d="M9.2 18.8h8.4M21.2 15.6v6.4"/>'),
+    'paste': ('<path d="M11.2 6.4H8a2.4 2.4 0 0 0-2.4 2.4v16.8A2.4 2.4 0 0 0 8 28h16a2.4 2.4 0 0 0 2.4-2.4V8.8A2.4 2.4 0 0 0 24 6.4h-3.2"/>'
+              '<rect x="11.2" y="4" width="9.6" height="4.8" rx="1.2"/><path d="M11.2 15.6h9.6M11.2 20.4h6"' + FAINT + '/>'),
+    'qr': ('<rect x="4.8" y="4.8" width="8.8" height="8.8" rx="1.2"/><rect x="18.4" y="4.8" width="8.8" height="8.8" rx="1.2"/>'
+           '<rect x="4.8" y="18.4" width="8.8" height="8.8" rx="1.2"/>'
+           '<path d="M18.4 18.4h3.6v3.6M27.2 18.4v8.8h-4.8M18.4 25.6v1.6"' + FAINT + '/>'),
+    'read-later': ('<circle cx="9.2" cy="19.6" r="4.8"/><circle cx="22.8" cy="19.6" r="4.8"/><path d="M14 19.6h4"/>'
+                   '<path d="M4.4 19.6 7.2 10h3.2M27.6 19.6 24.8 10h-3.2"' + FAINT + '/>'),
+    'read-later-add': ('<circle cx="9.2" cy="21.2" r="4.4"/><circle cx="21.2" cy="21.2" r="4.4"/><path d="M13.6 21.2h3.2"/>'
+                       '<path d="M24.4 4.4v8M20.4 8.4h8"/>'),
+    'flag': '<path d="M6.4 28V5.6"/><path d="M6.4 5.6h16.4l-3.2 5.6 3.2 5.6H6.4"' + FAINT + '/>',
+    'mobile': '<rect x="9.2" y="3.6" width="13.6" height="24.8" rx="3.2"/><path d="M14 7.6h4"' + FAINT + '/><path d="M14.6 24.4h2.8"/>',
+    'mobile-check': ('<rect x="7.6" y="3.6" width="13.6" height="24.8" rx="3.2"' + FAINT + '/>'
+                     '<path d="M18.4 17.6l3.2 3.2 6.4-6.8"/>'),
+    'science': ('<path d="M12.4 4.4h7.2M13.6 4.4v8.4L6.2 24.6a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3l-7.4-11.8V4.4"/>'
+                '<path d="M9.6 19.6h12.8"' + FAINT + '/>'),
+    'screenshot': ('<path d="M4.8 10.4V6.4a1.6 1.6 0 0 1 1.6-1.6h4M21.6 4.8h4a1.6 1.6 0 0 1 1.6 1.6v4M27.2 21.6v4a1.6 1.6 0 0 1-1.6 1.6h-4M10.4 27.2h-4a1.6 1.6 0 0 1-1.6-1.6v-4"/>'
+                   '<rect x="10" y="10" width="12" height="12" rx="1.6"' + FAINT + '/>'),
+    'chevron-down': '<path d="M9.2 13 16 19.8l6.8-6.8"/>',
+    'task-manager': '<path d="M4.6 5.2v22.2h22.8"' + FAINT + '/><path d="M9.6 22.4v-6M15.2 22.4V10M20.8 22.4v-8.8M26.4 22.4V13"/>',
+    'toolbar': ('<rect x="3.8" y="5.4" width="24.4" height="21.2" rx="3.2"/><path d="M3.8 12.4h24.4"/>'
+                '<path d="M8 8.9h.1M12 8.9h.1M20.8 8.9h3.2"' + FAINT + '/>'),
+    'trip': ('<rect x="4.4" y="10" width="23.2" height="16" rx="2.8"/><path d="M11.6 10V6.8a1.6 1.6 0 0 1 1.6-1.6h5.6a1.6 1.6 0 0 1 1.6 1.6V10"/>'
+             '<path d="M10.4 14v8M21.6 14v8"' + FAINT + '/>'),
+    'minus': '<path d="M7.2 16h17.6"/>',
+    'plus': '<path d="M16 7.2v17.6M7.2 16h17.6"/>',
+})
+
 
 def svg(inner):
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" '

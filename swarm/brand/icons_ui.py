@@ -40,6 +40,7 @@ NS = '{http://www.w3.org/2000/svg}'
 A = 'chrome/app/vector_icons/'
 C = 'components/vector_icons/'
 O = 'components/omnibox/browser/vector_icons/'
+V = 'ui/views/vector_icons/'
 # master -> the upstream .icon files it replaces. Chromium 153 draws the
 # "...Old" variants unless the RoundedIcons feature is on (it is off by
 # default), and the touch variants in touch mode; both are replaced so a
@@ -84,6 +85,75 @@ TARGETS = {
     'help': [A + 'help_menu_old.icon'],
     'settings': [A + 'settings_menu_old.icon'],
     'exit': [A + 'exit_menu_old.icon'],
+    # build 6: tab strip
+    'add': [C + 'add_old.icon'],
+    'close': [A + 'close_tab_chrome_refresh_old.icon', V + 'ic_close_old.icon',
+              A + 'close_chrome_refresh_old.icon', C + 'close_chrome_refresh_old.icon'],
+    'volume-up': [C + 'volume_up_chrome_refresh_old.icon', C + 'volume_up_old.icon'],
+    'volume-off': [C + 'volume_off_chrome_refresh_old.icon'],
+    'chevron-down': [A + 'tab_search_tab_strip_old.icon'],
+    # build 6: side panel header, address bar
+    'pin': [A + 'keep_old.icon'],
+    'pin-off': [A + 'keep_off_old.icon'],
+    'install': [A + 'install_desktop_chrome_refresh_old.icon', C + 'install_desktop_old.icon'],
+    # build 6: app menu submenus (and the profile menu's account rows)
+    'account-add': [A + 'account_add_chrome_refresh_old.icon'],
+    'account-box': [A + 'account_box_old.icon', V + 'account_box_old.icon'],
+    'account-manage': [A + 'account_manage_chrome_refresh_old.icon'],
+    'bookmark-all': [A + 'bookmark_all_tabs_chrome_refresh_old.icon'],
+    'bookmarks-manager': [A + 'bookmarks_manager_old.icon'],
+    'bookmarks-panel': [A + 'bookmarks_side_panel_refresh_old.icon'],
+    'app-menu-update': [A + 'browser_tools_update_chrome_refresh_old.icon'],
+    'business': [C + 'business_chrome_refresh_old.icon'],
+    'cast': [A + 'cast_chrome_refresh_old.icon'],
+    'copy': [A + 'copy_menu_old.icon'],
+    'credit-card': [A + 'credit_card_chrome_refresh_old.icon'],
+    'cut': [A + 'cut_menu_old.icon'],
+    'system': [A + 'desktop_windows_chrome_refresh_old.icon'],
+    'dev-tools': [A + 'developer_tools_old.icon'],
+    'devices': [A + 'devices_chrome_refresh_old.icon'],
+    'dock-left': [A + 'dock_to_left_old.icon'],
+    'dock-right': [A + 'dock_to_right_old.icon'],
+    'shortcut': [A + 'drive_shortcut_chrome_refresh_old.icon'],
+    'edit': [A + 'edit_chrome_refresh_old.icon', C + 'edit_chrome_refresh_old.icon'],
+    'fullscreen': [A + 'fullscreen_refresh_old.icon'],
+    'id-card': [C + 'id_card_old.icon'],
+    'link': [A + 'link_chrome_refresh_old.icon'],
+    'location': [C + 'location_on_chrome_refresh_old.icon'],
+    'book': [A + 'menu_book_chrome_refresh_old.icon'],
+    'name-window': [A + 'name_window_old.icon'],
+    'paste': [A + 'paste_menu_old.icon'],
+    'speed': [A + 'performance_old.icon'],
+    'qr': [A + 'qr_code_chrome_refresh_old.icon'],
+    'read-later-add': [A + 'read_later_add_old.icon'],
+    'read-later': [A + 'reading_list_old.icon'],
+    'ai': [A + 'release_alert_old.icon'],
+    'flag': [A + 'report_old.icon'],
+    'mobile-check': [A + 'request_mobile_site_checked_old.icon'],
+    'mobile': [A + 'request_mobile_site_unchecked_old.icon'],
+    'science': [C + 'science_old.icon'],
+    'search': [C + 'search_chrome_refresh_old.icon'],
+    'shield': [A + 'security_old.icon'],
+    'screenshot': [A + 'sharing_hub_screenshot_old.icon'],
+    'task-manager': [A + 'task_manager_old.icon'],
+    'toolbar': [A + 'toolbar_chrome_refresh_old.icon', A + 'toolbar_old.icon'],
+    'trip': [C + 'trip_old.icon'],
+    'minus': [A + 'zoom_minus_menu_refresh_old.icon'],
+    'plus': [A + 'zoom_plus_menu_refresh_old.icon'],
+}
+# Masters that also cover files already listed under another master are merged
+# below (EXTRA), so one master can serve several surfaces.
+EXTRA = {
+    'incognito': [A + 'incognito_old.icon'],
+    'info': [C + 'info_refresh_old.icon'],
+    'warning': [C + 'warning_old.icon'],
+}
+for _m, _t in EXTRA.items():
+    TARGETS[_m] = TARGETS[_m] + _t
+
+# Illustrations: copied as they are (fixed colours, not currentColor).
+ILLUSTRATIONS = {
+    'illustrations/no-downloads.svg': 'chrome/browser/resources/downloads/images/no_downloads.svg',
 }
 # Settings sidebar: master -> the <g id> it replaces in every iconset of
 # chrome/browser/resources/settings/icons.html.ts.
@@ -265,6 +335,11 @@ def main():
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(text, encoding='utf-8', newline='\n')
             count += 1
+    for src, rel in ILLUSTRATIONS.items():
+        out = TREE / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes((MASTERS / src).read_bytes())
+        count += 1
     for master in SETTINGS_ICONS:
         settings_iconset_g(master, SETTINGS_ICONS[master])
     print(f'wrote {count} .icon files from {len(TARGETS)} masters; {len(SETTINGS_ICONS)} Settings icons ready')
