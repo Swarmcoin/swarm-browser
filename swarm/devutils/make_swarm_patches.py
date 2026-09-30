@@ -654,6 +654,34 @@ def edit_chrome_product_icon(expected):
     return edit
 
 
+# ------------------------------------------------ 9. SWARM amber (G3)
+# The browser's colour is generated from one seed colour (Material "dynamic
+# colour"): prefs::kUserColor, SK_ColorTRANSPARENT meaning "Chromium's blue
+# baseline". The default becomes SWARM honey #F5A623, with the tonal-spot
+# scheme, so the toolbar, the selected item in Settings, focus rings and
+# buttons are generated from amber. The generated scheme keeps its own
+# contrast pairs (text on the accent colour is dark in dark mode). It is still
+# a normal preference: "Customize" / "Reset to default" in Settings,
+# Appearance keeps working; reset returns to amber, not to blue.
+def edit_theme_default_colour(text, path):
+    text = sub(text,
+               '  registry->RegisterIntegerPref(prefs::kUserColor, SK_ColorTRANSPARENT);\n',
+               '  // SWARM: SWARM honey #F5A623 is the default colour of the browser.\n'
+               '  registry->RegisterIntegerPref(prefs::kUserColor,\n'
+               '                                SkColorSetRGB(0xF5, 0xA6, 0x23));\n',
+               path)
+    text = sub(text,
+               '  registry->RegisterIntegerPref(\n'
+               '      prefs::kBrowserColorVariant,\n'
+               '      static_cast<int>(ui::mojom::BrowserColorVariant::kSystem));\n',
+               '  // SWARM: the scheme the amber default is generated with.\n'
+               '  registry->RegisterIntegerPref(\n'
+               '      prefs::kBrowserColorVariant,\n'
+               '      static_cast<int>(ui::mojom::BrowserColorVariant::kTonalSpot));\n',
+               path)
+    return text
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -706,6 +734,9 @@ PATCHES = {
     'swarm-ui-logos.patch': {
         'ui/webui/resources/cr_elements/icons.html.ts': edit_chrome_product_icon(2),
         'chrome/browser/resources/settings/icons.html.ts': edit_chrome_product_icon(2),
+    },
+    'swarm-default-colour.patch': {
+        'chrome/browser/themes/theme_service.cc': edit_theme_default_colour,
     },
 }
 
