@@ -3,3 +3,4 @@ swarm/swarm-native-host-lookup.patch
 swarm/swarm-privacy-defaults.patch
 swarm/swarm-component-extensions.patch
 swarm/swarm-installer-host.patch
+swarm/swarm-first-run.patch

@@ -529,6 +529,66 @@ def edit_chrome_release(text, path):
                path)
 
 
+# ------------------------------------------------------ 6. SWARM first run
+# ungoogled-chromium's first-run-page.patch adds, in chrome_browser_main.cc,
+#   browser_creator_->AddFirstRunTabs({GURL("chrome://ungoogled-first-run")});
+# and a WebUI page of its own (chrome/browser/ui/webui/ungoogled_first_run.h).
+# The upstream patch file is never edited; this patch, applied after both
+# upstream series, changes the lines that patch left in the tree:
+#   1. the first-run tab is SWARM Start's welcome page;
+#   2. chrome://ungoogled-first-run, still reachable by typing it, now shows a
+#      SWARM page that forwards to the same welcome page;
+#   3. it is no longer suggested in the address bar nor listed on
+#      chrome://chrome-urls.
+# The route is a redirect rather than a WebUI page with SWARM content because
+# the welcome page belongs with the rest of the SWARM pages (the Start
+# extension): one copy of the text, the same fonts and styles, and no string
+# compiled into C++.
+SWARM_START_ID = 'fopmngfcphleeiffnfhhahdhafgimnei'
+SWARM_WELCOME_URL = f'chrome-extension://{SWARM_START_ID}/welcome.html'
+
+SWARM_FIRST_RUN_PAGE = f'''    std::string source = R"(
+<!doctype html>
+<title>Welcome to SWARM Browser</title>
+<meta name="color-scheme" content="dark">
+<meta http-equiv="refresh" content="0; url={SWARM_WELCOME_URL}">
+<style>
+ html{{background:#0E1116; color:#E6EDF3; font:15px/1.5 system-ui, sans-serif}}
+ a{{color:#FFC94D}}
+ p{{max-width:32em; margin:6em auto; padding:0 1em}}
+</style>
+<p>Opening the SWARM Browser welcome page.
+ If it does not open, <a href="{SWARM_WELCOME_URL}">open it here</a>.
+)";
+'''
+
+
+def edit_first_run_tab(text, path):
+    return sub(text,
+               '      browser_creator_->AddFirstRunTabs({GURL("chrome://ungoogled-first-run")});\n',
+               '      // SWARM: the first-run tab is the SWARM welcome page (SWARM Start,\n'
+               '      // a component extension), not ungoogled-chromium\'s page.\n'
+               '      browser_creator_->AddFirstRunTabs({GURL(\n'
+               f'          "{SWARM_WELCOME_URL}")}});\n',
+               path)
+
+
+def edit_first_run_page(text, path):
+    start = text.index('    std::string source = R"(\n')
+    end = text.index(')";\n', start) + len(')";\n')
+    old = text[start:end]
+    return sub(text, old,
+               '    // SWARM: this page only forwards to the SWARM welcome page.\n'
+               + SWARM_FIRST_RUN_PAGE, path)
+
+
+def edit_chrome_url_hosts(text, path):
+    return sub(text,
+               '      "ungoogled-first-run",\n      kChromeUIAboutHost,\n',
+               '      kChromeUIAboutHost,\n',
+               path)
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -569,6 +629,11 @@ PATCHES = {
     # places in the series.
     'swarm-installer-host.patch': {
         'chrome/installer/mini_installer/chrome.release': edit_chrome_release,
+    },
+    'swarm-first-run.patch': {
+        'chrome/browser/chrome_browser_main.cc': edit_first_run_tab,
+        'chrome/browser/ui/webui/ungoogled_first_run.h': edit_first_run_page,
+        'chrome/common/webui_url_constants.cc': edit_chrome_url_hosts,
     },
 }
 
