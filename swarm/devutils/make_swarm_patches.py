@@ -779,6 +779,41 @@ def edit_google_blues(text, path):
     return text
 
 
+# ----------------------------------------- 13. DuckDuckGo default (build 6)
+# ungoogled-chromium's replace-google-search-engine-with-nosearch.patch turns
+# the Google entry into "No Search" (search_url http://{searchTerms}), and the
+# fallback default search engine is looked up by google.id, so a search from
+# the address bar or SWARM Start opened http://<the words>/. The fallback
+# becomes DuckDuckGo (prepopulated id 92), looked up in the full built-in list
+# because 11 regional lists do not carry it, with its suggestion URL removed so
+# typing sends nothing to DuckDuckGo before Enter. It is only the fallback: a
+# search engine the person picks in Settings wins, as before.
+def edit_default_search(text, path):
+    return sub(text,
+               'std::unique_ptr<TemplateURLData> GetPrepopulatedFallbackSearch(\n'
+               '    PrefService& prefs,\n'
+               '    const std::vector<raw_ptr<const PrepopulatedEngine>>&\n'
+               '        regional_prepopulated_engines) {\n'
+               '  return FindPrepopulatedEngineInternal(prefs, regional_prepopulated_engines,\n',
+               'std::unique_ptr<TemplateURLData> GetPrepopulatedFallbackSearch(\n'
+               '    PrefService& prefs,\n'
+               '    const std::vector<raw_ptr<const PrepopulatedEngine>>&\n'
+               '        regional_prepopulated_engines) {\n'
+               '  // SWARM: DuckDuckGo is the default search engine, with search\n'
+               '  // suggestions off. The person can choose another in Settings.\n'
+               '  if (const PrepopulatedEngine* swarm_default =\n'
+               '          GetPrepopulatedEngineFromBuiltInData(\n'
+               '              duckduckgo.id, regional_prepopulated_engines);\n'
+               '      swarm_default) {\n'
+               '    std::unique_ptr<TemplateURLData> data =\n'
+               '        PrepopulatedEngineToTemplateURLData(swarm_default);\n'
+               '    data->suggestions_url.clear();\n'
+               '    return data;\n'
+               '  }\n'
+               '  return FindPrepopulatedEngineInternal(prefs, regional_prepopulated_engines,\n',
+               path)
+
+
 # Patches whose diff is taken against the file as the earlier SWARM patches
 # leave it, because an earlier patch edits the same file.
 CHAINED = {'swarm-ui-icons.patch'}
@@ -850,6 +885,9 @@ PATCHES = {
     'swarm-webui-colour.patch': {
         'ui/webui/resources/cr_elements/cr_shared_vars.css':
             lambda t, p: edit_google_blues(edit_webui_fallback_colours(t, p), p),
+    },
+    'swarm-default-search.patch': {
+        'components/search_engines/template_url_prepopulate_data.cc': edit_default_search,
     },
 }
 

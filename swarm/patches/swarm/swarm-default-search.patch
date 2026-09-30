@@ -1,0 +1,20 @@
+--- a/components/search_engines/template_url_prepopulate_data.cc
++++ b/components/search_engines/template_url_prepopulate_data.cc
+@@ -307,6 +307,17 @@
+     PrefService& prefs,
+     const std::vector<raw_ptr<const PrepopulatedEngine>>&
+         regional_prepopulated_engines) {
++  // SWARM: DuckDuckGo is the default search engine, with search
++  // suggestions off. The person can choose another in Settings.
++  if (const PrepopulatedEngine* swarm_default =
++          GetPrepopulatedEngineFromBuiltInData(
++              duckduckgo.id, regional_prepopulated_engines);
++      swarm_default) {
++    std::unique_ptr<TemplateURLData> data =
++        PrepopulatedEngineToTemplateURLData(swarm_default);
++    data->suggestions_url.clear();
++    return data;
++  }
+   return FindPrepopulatedEngineInternal(prefs, regional_prepopulated_engines,
+                                         google.id,
+                                         /*use_first_as_fallback=*/true);
