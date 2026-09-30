@@ -1,0 +1,22 @@
+--- a/components/webui/chrome_urls/resources/chrome_urls.html
++++ b/components/webui/chrome_urls/resources/chrome_urls.html
+@@ -11,7 +11,7 @@
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1, maximum-scale=1">
+   <link rel="stylesheet" href="chrome://resources/css/text_defaults.css">
+ </if>
+-    <title>Chrome URLs</title>
++    <title>SWARM Browser pages</title>
+ <if expr="is_ios">
+     <script src="chrome://resources/js/ios/mojo_api.js"></script>
+ </if>
+--- a/components/webui/chrome_urls/resources/app.html.ts
++++ b/components/webui/chrome_urls/resources/app.html.ts
+@@ -9,7 +9,7 @@
+ export function getHtml(this: ChromeUrlsAppElement) {
+   // clang-format off
+   return html`
+-<h2>List of Chrome URLs</h2>
++<h2>List of SWARM Browser pages</h2>
+ <ul>
+   ${this.webuiUrlInfos_.map(info => html`
+     ${this.isChromeUrlsUrl_(info) ?

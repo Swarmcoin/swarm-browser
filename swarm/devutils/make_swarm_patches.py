@@ -682,6 +682,20 @@ def edit_theme_default_colour(text, path):
     return text
 
 
+# ------------------------------------------------ 10. page names (G4)
+# chrome://chrome-urls (also chrome://about) writes its title and heading as
+# literals in its own page files, not as grd strings, so the string rules in
+# swarm/brand/ui_strings.py cannot reach them.
+def edit_chrome_urls_title(text, path):
+    return sub(text, '    <title>Chrome URLs</title>\n',
+               '    <title>SWARM Browser pages</title>\n', path)
+
+
+def edit_chrome_urls_heading(text, path):
+    return sub(text, '<h2>List of Chrome URLs</h2>\n',
+               '<h2>List of SWARM Browser pages</h2>\n', path)
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -737,6 +751,10 @@ PATCHES = {
     },
     'swarm-default-colour.patch': {
         'chrome/browser/themes/theme_service.cc': edit_theme_default_colour,
+    },
+    'swarm-ui-names.patch': {
+        'components/webui/chrome_urls/resources/chrome_urls.html': edit_chrome_urls_title,
+        'components/webui/chrome_urls/resources/app.html.ts': edit_chrome_urls_heading,
     },
 }
 
