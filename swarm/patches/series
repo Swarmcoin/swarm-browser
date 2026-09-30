@@ -5,3 +5,4 @@ swarm/swarm-component-extensions.patch
 swarm/swarm-installer-host.patch
 swarm/swarm-first-run.patch
 swarm/swarm-toolbar-pins.patch
+swarm/swarm-ui-logos.patch

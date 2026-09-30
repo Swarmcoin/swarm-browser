@@ -50,6 +50,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ICONS = HERE / 'brand' / 'icons'
+# SWARM: the logos Chromium draws inside its UI (Settings header, chrome://
+# favicons, installer icons ...), laid out as paths relative to the source
+# tree. Written by swarm/brand/render_ui_logos.py.
+BRAND_TREE = HERE / 'brand' / 'tree'
 EXTENSIONS = HERE / 'extensions'
 
 THEME_RELDIR = Path('chrome/app/theme/chromium')
@@ -141,6 +145,29 @@ def install_branding(source_tree, dry_run):
         print(f'  branding: {dest.relative_to(source_tree)}')
         if not dry_run:
             shutil.copy2(src, dest)
+        count += 1
+    return count
+
+
+def install_brand_tree(source_tree, dry_run):
+    """Copy swarm/brand/tree/<path> over build/src/<path>, file for file.
+
+    Like the icons, every destination must already exist: a logo Chromium
+    renamed or dropped fails the build instead of quietly staying Chromium's.
+    """
+    count = 0
+    for src in sorted(BRAND_TREE.rglob('*')):
+        if src.is_dir():
+            continue
+        rel = src.relative_to(BRAND_TREE)
+        dest = source_tree / rel
+        if not dest.exists():
+            raise SystemExit(
+                f'upstream file {rel.as_posix()} does not exist -- Chromium moved '
+                f'a logo; re-check swarm/brand/render_ui_logos.py')
+        print(f'  logo: {rel.as_posix()}')
+        if not dry_run and (not dest.is_file() or dest.read_bytes() != src.read_bytes()):
+            shutil.copyfile(src, dest)
         count += 1
     return count
 
@@ -239,6 +266,7 @@ def main():
         source_tree = args.source_tree.resolve()
         print(f'Installing SWARM assets into {source_tree}')
         icons = install_branding(source_tree, args.dry_run)
+        icons += install_brand_tree(source_tree, args.dry_run)
         exts = install_extensions(source_tree, args.dry_run)
         # SWARM: the UI product strings (swarm/brand/product_strings.py); the
         # BRANDING file only renames the installer and app identity.

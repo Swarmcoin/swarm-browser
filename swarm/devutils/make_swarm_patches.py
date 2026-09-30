@@ -623,6 +623,37 @@ def edit_pinned_extensions(text, path):
                path)
 
 
+# ------------------------------------------------------ 8. UI logos (G1)
+# The About item in Settings and the Safety Hub card draw the product glyph
+# from an inline icon, cr:chrome-product / settings20:chrome-product, which in
+# Chromium 153 is the Chrome logo outline. Each <g id="chrome-product"> in the
+# two icon sets becomes the SWARM mark (monochrome, currentColor), read from
+# swarm/extensions/start/icons.svg so there is one copy of the drawing. The
+# PNG and SVG logos (Settings header, favicons, ...) are files, not text, and
+# are copied in by install_swarm_assets.py from swarm/brand/tree.
+def _swarm_mark_paths():
+    import re as _re
+    sprite = (ROOT / 'swarm' / 'extensions' / 'start' / 'icons.svg').read_text(encoding='utf-8')
+    symbol = _re.search(r'<symbol id="i-mark" [^>]*>(.*?)</symbol>', sprite, _re.S).group(1)
+    return _re.findall(r' d="([^"]+)"', symbol)
+
+
+def edit_chrome_product_icon(expected):
+    import re as _re
+
+    def edit(text, path):
+        pattern = _re.compile(r'<g id="chrome-product"[^>]*>.*?</g>', _re.S)
+        found = pattern.findall(text)
+        if len(found) != expected:
+            raise SystemExit(f'{path}: expected {expected} chrome-product icons, '
+                             f'found {len(found)}. Upstream changed.')
+        paths = ''.join(f'<path d="{d}"></path>' for d in _swarm_mark_paths())
+        # The mark is 1000 x 467.95; the box below centres it in a square.
+        mark = f'<g id="chrome-product" viewBox="0 -266 1000 1000">{paths}</g>'
+        return pattern.sub(lambda _m: mark, text)
+    return edit
+
+
 PATCHES = {
     'swarm-branding.patch': {
         'chrome/app/theme/chromium/BRANDING': lambda t, p: BRANDING_NEW,
@@ -671,6 +702,10 @@ PATCHES = {
     },
     'swarm-toolbar-pins.patch': {
         'extensions/browser/extension_prefs.cc': edit_pinned_extensions,
+    },
+    'swarm-ui-logos.patch': {
+        'ui/webui/resources/cr_elements/icons.html.ts': edit_chrome_product_icon(2),
+        'chrome/browser/resources/settings/icons.html.ts': edit_chrome_product_icon(2),
     },
 }
 

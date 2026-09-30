@@ -65,6 +65,7 @@ print('Python')
 for p in [ROOT / 'build.py', ROOT / 'package.py',
           ROOT / 'swarm' / 'install_swarm_assets.py',
           ROOT / 'swarm' / 'brand' / 'render_icons.py',
+          ROOT / 'swarm' / 'brand' / 'render_ui_logos.py',
           ROOT / 'swarm' / 'devutils' / 'make_swarm_patches.py',
           ROOT / 'swarm' / 'devutils' / 'prepare_and_verify.py']:
     try:
