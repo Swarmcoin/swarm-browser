@@ -8,7 +8,7 @@ The rule is simple and it is the whole point of the layout:
 > `build.py` and `package.py`, every one of them marked `# SWARM`.
 
 That keeps a rebase onto the next Chromium release a submodule bump plus a
-re-check of this layer's own 24 hunks, instead of a merge across ungoogled's
+re-check of this layer's own 35 hunks, instead of a merge across ungoogled's
 several hundred.
 
 Upstream provenance of this checkout:
@@ -18,7 +18,7 @@ Upstream provenance of this checkout:
 | `ungoogled-chromium-windows` tag | `153.0.8010.52-1.1`, commit `4fe389fe08dac85cead3ea77afe59834dbbc9673` |
 | `ungoogled-chromium` submodule | tag `153.0.8010.52-1`, commit `a638756eb14c8b6ce64b4b2a067afea5d4207bf4` |
 | Chromium | `153.0.8010.52` (`ungoogled-chromium/chromium_version.txt`) |
-| SWARM layer build | `swarm/revision.txt` (currently `2`: bumped from `1` when the installer started carrying the wallet host, so these packages are named `-2-` and cannot be mistaken for the earlier `-1-` builds) |
+| SWARM layer build | `swarm/revision.txt` (currently `3`: build 5, with SWARM Start, the SWARM welcome page and the branding pass. `2` was the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-3-`) |
 
 Licences: upstream `LICENSE` files are untouched. The SWARM notices, and the
 BSD-3 notices for Chromium and ungoogled-chromium, are in `NOTICE-SWARM.md` at
@@ -34,17 +34,31 @@ swarm/
   patches/swarm/swarm-privacy-defaults.patch
   patches/swarm/swarm-component-extensions.patch
   patches/swarm/swarm-installer-host.patch
+  patches/swarm/swarm-first-run.patch
+  patches/swarm/swarm-toolbar-pins.patch
+  patches/swarm/swarm-ui-logos.patch
+  patches/swarm/swarm-default-colour.patch
+  patches/swarm/swarm-ui-names.patch
   brand/render_icons.py                re-cuts the SWARM mark into Chromium's icon set
   brand/icons/                         the rendered result (binary, copied in, not patched)
+  brand/render_ui_logos.py             re-cuts the mark into the logos drawn INSIDE the UI
+  brand/tree/                          its result, laid out as paths of the source tree
+  brand/product_strings.py             "Chromium" -> "SWARM Browser" in chromium_strings.grd
+  brand/ui_strings.py                  the same for the other string bundles, plus "Chrome"
+                                       and a few messages set by name
   extensions/wallet/                   bundled SWARM Wallet (copied from its own repo)
   extensions/rewards/                  bundled SWARM Rewards component extension
   extensions/update/                   bundled SWARM Update: the daily signed update check
+  extensions/start/                    bundled SWARM Start: new tab, Navigator, welcome page
   updates/                             make, sign and check the update feed (updates/README.md)
   tests/update/                        node --test suites + Edge smoke test for SWARM Update
+  tests/start/                         node --test suites for SWARM Start's pure logic
+  tests/brand/                         unit tests for the two string rewriters
   devutils/                            regenerate the series, verify it, parse-check it
-  install_swarm_assets.py              copies icons + extensions into build/src (stamping
-                                       SWARM Update's version.json), and the built wallet
-                                       host into the build output
+  install_swarm_assets.py              copies icons, UI logos + extensions into build/src
+                                       (stamping SWARM Update's version.json), rewrites the
+                                       UI strings, and copies the built wallet host into
+                                       the build output
   flags.swarm.gn                       extra GN args, appended last
   revision.txt                         the SWARM layer's build number
 ```
@@ -63,19 +77,26 @@ And the six marked hooks outside it:
 | `package.py` | call `install_bundled_host()` on `out/Default` before packaging (again; it leaves up-to-date files alone) |
 | `package.py` | name the outputs `SWARM-Browser-<chromium>-<swarm>-win-<arch>.{exe,zip}` |
 
-## The five patches
+## The ten patches
 
 | Patch | Files | Hunks | What it does |
 | --- | --- | --- | --- |
 | `swarm-branding.patch` | 5 | 9 | SWARM name, install identity, native-messaging registry key |
 | `swarm-native-host-lookup.patch` | 1 | 3 | finds the bundled wallet host in the browser's own folders |
 | `swarm-privacy-defaults.patch` | 4 | 4 | privacy defaults compiled in |
-| `swarm-component-extensions.patch` | 6 | 7 | SWARM Wallet, SWARM Rewards and SWARM Update as component extensions |
+| `swarm-component-extensions.patch` | 6 | 7 | SWARM Wallet, Rewards, Update and Start as component extensions |
 | `swarm-installer-host.patch` | 1 | 1 | the installer packs the bundled wallet host |
+| `swarm-first-run.patch` | 3 | 3 | the first-run tab is the SWARM welcome page (build 5) |
+| `swarm-toolbar-pins.patch` | 1 | 1 | the Navigator and wallet buttons are pinned until the person changes the pins (build 5) |
+| `swarm-ui-logos.patch` | 2 | 4 | the inline product glyph (the About item) is the SWARM mark (build 5) |
+| `swarm-default-colour.patch` | 1 | 1 | SWARM honey #F5A623 is the default browser colour (build 5) |
+| `swarm-ui-names.patch` | 2 | 2 | chrome://chrome-urls is titled "SWARM Browser pages" (build 5) |
 
 Applied in that order (`swarm/patches/series`), after both upstream series.
-16 distinct files, 24 hunks; `launch_context_win.cc` is the one file two
-patches touch.
+25 distinct files, 35 hunks; `launch_context_win.cc` is the one file two
+patches touch. `swarm-first-run.patch` changes three lines that
+ungoogled-chromium's own `first-run-page.patch` put in the tree; the upstream
+patch file itself is untouched, which is the rule.
 
 ### `swarm-branding.patch` (5 files, 9 hunks)
 
@@ -314,6 +335,118 @@ at runtime. That is 59 files: 22 wallet, 16 rewards and 21 update.
 entries, its `BUILD.gn` inputs and its copy in the tree, file for file; the
 one file allowed to differ is SWARM Update's stamped `version.json`.
 
+### Build 5: SWARM Start, first run, pins, logos, strings, colour, names
+
+**SWARM Start** (`swarm/extensions/start`, id `fopmngfcphleeiffnfhhahdhafgimnei`;
+its key was generated on 2026-09-28 at `D:/swarm-work/keys/swarm-start.pem`,
+outside the tree) is the fourth component extension, bundled exactly like the
+other three:
+
+* `chrome_url_overrides.newtab` -> `newtab.html`: the SWARM start page. A
+  drawn background (gradient and the site's comb pattern, with a slow drift
+  that stops under `prefers-reduced-motion` or when switched off), the SWARM
+  mark, a search box (`lib/query.js` decides address or search; searches go
+  to `chrome.search.query`, the browser's default engine), seven SWARM
+  shortcuts (`lib/destinations.js`; FUEL is left out on purpose, it is a
+  separate brand; the Market is labelled testnet), and three tiles: the
+  wallet (opens the wallet's own popup page, see below), "7 privacy switches
+  on" with a plain list (`privacy.html`, `lib/privacy.js`, whose test checks
+  every entry against `swarm-privacy-defaults.patch`), and "Network now",
+  OFF by default: nothing is fetched until the person turns it on, then two
+  GETs per new tab to `lwd-main.swarm.green/status.json` and
+  `swarm.green/data/swarm-map-live.json` (`credentials: "omit"`, no referrer;
+  SWARM mainnet only, `lib/format.js`). The three switches are kept in
+  `chrome.storage.local` (`startSettings`).
+* `side_panel` + `action`: the SWARM Navigator. The toolbar button (the mark
+  in amber on transparency, so it is not mistaken for the wallet's dark tile)
+  opens the side panel (`setPanelBehavior({openPanelOnActionClick: true})`
+  in `background.js`).
+* `welcome.html`: the first-run page (below).
+* Permissions `storage`, `sidePanel`, `search`; host permissions for the two
+  status files only; CSP `connect-src https://lwd-main.swarm.green
+  https://swarm.green`; nothing web-accessible, no content script, no
+  `externally_connectable`.
+
+**The wallet and SWARM Update are opened, never talked to.** Neither exposes
+a messaging contract to another extension: the wallet's
+`externally_connectable` lists only SWARM Rewards, and its
+`onMessageExternal` answers Rewards about the receive address and nothing
+else; SWARM Update answers its own pages only. SWARM Start therefore opens
+their own `popup.html` in a small window (`chrome.windows.create`, a
+browser-initiated navigation that `extension_navigation_throttle.cc` allows to
+another extension's page without that page being web-accessible) and shows no
+balance or block height of its own.
+
+**`swarm-first-run.patch`.** ungoogled-chromium's `first-run-page.patch` adds
+`AddFirstRunTabs({GURL("chrome://ungoogled-first-run")})` to
+`chrome_browser_main.cc` and a WebUI page in `ungoogled_first_run.h`. The
+SWARM patch, applied after it, points the first-run tab at
+`chrome-extension://fopmngfcphleeiffnfhhahdhafgimnei/welcome.html`, turns the
+ungoogled page (still reachable by typing its address) into a short SWARM page
+that forwards there (the navigation throttle allows `chrome://` pages to open
+extension pages), and removes its host from the list `chrome://chrome-urls`
+shows and the address bar suggests. A redirect rather than new WebUI content,
+so the welcome text lives once, with the other SWARM pages, in the extension.
+
+**`swarm-toolbar-pins.patch`.** The toolbar shows an extension's button only
+when its id is in `extensions.pinned_extensions`, and
+`ExtensionPrefs::GetPinnedExtensions()` reads only a user-set value, so a
+registered default would be ignored. The patch returns the Navigator's and
+the wallet's ids while the person has never pinned or unpinned anything; the
+first pin, unpin or move writes the full list, and the person's own list rules
+from then on.
+
+**UI logos (`render_ui_logos.py`, `brand/tree/`, `swarm-ui-logos.patch`).**
+The owner's 2026-09-30 screenshot of Settings showed the Chromium logo in the
+header and beside "About". Files replaced; `install_swarm_assets.py` fails if
+any destination no longer exists upstream:
+
+| Tree path | What draws it |
+| --- | --- |
+| `chrome/app/theme/default_{100,200}_percent/chromium/product_logo_{16,32}.png` | `chrome://theme/current-channel-logo` (IDR_PRODUCT_LOGO_32): the Settings, Extensions, History and Downloads headers and the About page |
+| `.../product_logo_name_22{,_white}.png` | IDR_PRODUCT_LOGO_NAME_22: the name logo (SWARM lockup) |
+| `components/resources/default_{100,200}_percent/chromium/product_logo{,_white}.png` | the components' product logo (SWARM lockup) |
+| `components/resources/default_{100,200}_percent/chromium/favicon_product.png` | the tab icon of chrome:// pages |
+| `ui/webui/resources/images/chrome_logo_dark.svg` | the same headers in dark mode |
+| `chrome/app/theme/chromium/product_logo{,_animation}.svg` | IDR_PRODUCT_LOGO_SVG and _ANIMATION_SVG |
+| `chrome/installer/mini_installer/mini_installer.ico`, `chrome/installer/setup/setup.ico` | the installer's and setup.exe's own icons |
+
+The glyph beside "About" is an inline iconset entry, `cr:chrome-product` and
+`settings20:chrome-product` (two in `cr_elements/icons.html.ts`, two in
+`settings/icons.html.ts`); `swarm-ui-logos.patch` replaces the four with the
+monochrome mark read from `extensions/start/icons.svg`. Left as they are:
+`chrome/browser/resources/intro/images/refresh_showcase_illustration_chromium.png`
+(the sign-in intro, unreachable without Google sign-in) and the Web Store icons.
+
+**UI strings (`ui_strings.py`).** The same mechanism as `product_strings.py`,
+over `generated_resources.grd`, `components_strings.grd`,
+`components_chromium_strings.grd`, `ui_strings.grd`, `app_locale_settings.grd`
+and their parts (the ChromeOS, Android, omnibox-pedal-synonym and glic parts
+are skipped). On the 153 tree: 276 x Chrome and 89 x Chromium -> SWARM
+Browser, and five messages set by name: `IDS_SETTINGS_PEOPLE` "You and your
+browser", `IDS_SETTINGS_GOOGLE_SERVICES_PAGE_TITLE` "Other services",
+`IDS_VERSION_UI_OFFICIAL` / `_UNOFFICIAL` "Official Build" / "Developer Build"
+(ungoogled's patch had appended ", ungoogled-chromium"), and
+`IDS_SETTINGS_SIDE_PANEL_ALIGNMENT_CHROME_PANELS` "Browser panels". "Chromium"
+stays where it names the upstream project truthfully (the Authors, "Based on
+Chromium", "the Chromium open source project", "Chromium developers");
+"Chrome" stays where it names something else (Web Store, ChromeOS, Chrome
+apps, Enterprise, Remote Desktop, "Google Chrome") and in sentences about a
+Google service (sign-in, sync, Gmail, Safe Browsing), which describe Google's
+feature. "Google" is never replaced by a rule: what is left names Google or one
+of its products as a third party. Test: `python swarm/tests/brand/test_ui_strings.py`.
+Not reached by any grd rule: the descriptions on `chrome://flags`, which are
+C++ literals (`flag_descriptions.cc` and ungoogled's own flag patches).
+
+**Colour (`swarm-default-colour.patch`).** The default of `prefs::kUserColor`
+becomes SWARM honey `#F5A623` (it was transparent, meaning Chromium's blue
+baseline) and `kBrowserColorVariant` tonal spot, so the browser's colour
+scheme is generated from amber. It stays an ordinary preference: the person can
+pick another colour, and "reset to default" returns to amber.
+
+**Names (`swarm-ui-names.patch`).** `chrome://chrome-urls` writes its title
+and heading as literals in its page files; they become "SWARM Browser pages".
+
 ### `swarm-installer-host.patch` (1 file, 1 hunk)
 
 `chrome/installer/mini_installer/chrome.release` is the list of files the
@@ -488,13 +621,14 @@ each hex nibble mapped `0-f` to `a-p` (Chromium `crx_file/id_util.cc`).
 | SWARM Wallet | `swarm/extensions/wallet` -> `swarm_wallet` | `gmmgmodmgnigcgboccjelpgedejejfap` |
 | SWARM Rewards | `swarm/extensions/rewards` -> `swarm_rewards` | `gjmgdanakkpkgpmecnecoliifonlapnb` |
 | SWARM Update | `swarm/extensions/update` -> `swarm_update` | `locbhnoahhmjhcjpndjmnfmnfekhdode` |
+| SWARM Start | `swarm/extensions/start` -> `swarm_start` | `fopmngfcphleeiffnfhhahdhafgimnei` |
 
 The wallet id is what the native messaging host manifest must list in
 `allowed_origins` as `chrome-extension://gmmgmodmgnigcgboccjelpgedejejfap/`.
 
 **The matching private keys are not in this repository.** They were generated
 locally and left outside the tree (`D:/swarm-work/keys/swarm-wallet.pem`,
-`swarm-rewards.pem`, `swarm-update.pem`, each RSA 2048 from `openssl genrsa`);
+`swarm-rewards.pem`, `swarm-update.pem`, `swarm-start.pem`, each RSA 2048 from `openssl genrsa`);
 only the public key is needed to build, and a component extension is never
 signed into a `.crx`. If the owner ever wants to publish an extension to a
 store, generate the store key there and expect a different id.
