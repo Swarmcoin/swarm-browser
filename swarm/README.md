@@ -8,7 +8,7 @@ The rule is simple and it is the whole point of the layout:
 > `build.py` and `package.py`, every one of them marked `# SWARM`.
 
 That keeps a rebase onto the next Chromium release a submodule bump plus a
-re-check of this layer's own 35 hunks, instead of a merge across ungoogled's
+re-check of this layer's own 52 hunks, instead of a merge across ungoogled's
 several hundred.
 
 Upstream provenance of this checkout:
@@ -39,10 +39,14 @@ swarm/
   patches/swarm/swarm-ui-logos.patch
   patches/swarm/swarm-default-colour.patch
   patches/swarm/swarm-ui-names.patch
+  patches/swarm/swarm-ui-icons.patch
+  patches/swarm/swarm-webui-colour.patch
   brand/render_icons.py                re-cuts the SWARM mark into Chromium's icon set
   brand/icons/                         the rendered result (binary, copied in, not patched)
   brand/render_ui_logos.py             re-cuts the mark into the logos drawn INSIDE the UI
   brand/tree/                          its result, laid out as paths of the source tree
+  brand/icons-ui/                      the SWARM UI icon masters (SVG) + draw_masters.py
+  brand/icons_ui.py                    masters -> Skia .icon files in brand/tree + Settings icons
   brand/product_strings.py             "Chromium" -> "SWARM Browser" in chromium_strings.grd
   brand/ui_strings.py                  the same for the other string bundles, plus "Chrome"
                                        and a few messages set by name
@@ -77,7 +81,7 @@ And the six marked hooks outside it:
 | `package.py` | call `install_bundled_host()` on `out/Default` before packaging (again; it leaves up-to-date files alone) |
 | `package.py` | name the outputs `SWARM-Browser-<chromium>-<swarm>-win-<arch>.{exe,zip}` |
 
-## The ten patches
+## The twelve patches
 
 | Patch | Files | Hunks | What it does |
 | --- | --- | --- | --- |
@@ -91,10 +95,13 @@ And the six marked hooks outside it:
 | `swarm-ui-logos.patch` | 2 | 4 | the inline product glyph (the About item) is the SWARM mark (build 5) |
 | `swarm-default-colour.patch` | 1 | 1 | SWARM honey #F5A623 is the default browser colour (build 5) |
 | `swarm-ui-names.patch` | 2 | 2 | chrome://chrome-urls is titled "SWARM Browser pages" (build 5) |
+| `swarm-ui-icons.patch` | 1 | 10 | the Settings sidebar icons are SWARM's (build 5; generated on top of `swarm-ui-logos.patch`) |
+| `swarm-webui-colour.patch` | 1 | 7 | the WebUI pages' fallback accent and blue palette are SWARM amber (build 5) |
 
 Applied in that order (`swarm/patches/series`), after both upstream series.
-25 distinct files, 35 hunks; `launch_context_win.cc` is the one file two
-patches touch. `swarm-first-run.patch` changes three lines that
+26 distinct files, 52 hunks; `launch_context_win.cc` and
+`settings/icons.html.ts` are each touched by two patches (the second of each
+pair is generated against the first). `swarm-first-run.patch` changes three lines that
 ungoogled-chromium's own `first-run-page.patch` put in the tree; the upstream
 patch file itself is untouched, which is the rule.
 
@@ -443,6 +450,40 @@ becomes SWARM honey `#F5A623` (it was transparent, meaning Chromium's blue
 baseline) and `kBrowserColorVariant` tonal spot, so the browser's colour
 scheme is generated from amber. It stays an ordinary preference: the person can
 pick another colour, and "reset to default" returns to amber.
+
+**Colour, part 2 (`swarm-webui-colour.patch`).** Settings, Extensions, History
+and the other WebUI pages of Chromium 153 do not load the generated colours
+(`chrome://theme/colors.css`); they use fixed fallbacks in
+`ui/webui/resources/cr_elements/cr_shared_vars.css`, Material's baseline blue,
+and the Google blue palette defined beside them. Both become the amber family,
+light and dark: in dark mode the accent is honey `#F5A623` with `#0E1116` text
+on it, in light mode `#8A4B03` with white text (6.4:1).
+
+**Icons (G5: `icons-ui/`, `icons_ui.py`, `swarm-ui-icons.patch`).** The icons
+people see all day are redrawn in swarm.green's icon language: 32-unit grid,
+2.4 stroke, round caps, a .42 "lit inner face", hexagons where they fit (several
+are the site's own sprite symbols). `icons-ui/draw_masters.py` writes the SVG
+masters; `icons_ui.py` converts them into Skia vector icons (`.icon`, absolute
+MOVE_TO/LINE_TO/CUBIC_TO/ARC_TO, CIRCLE, ROUND_RECT, STROKE, PATH_COLOR_ALPHA
+0x6B for the faint parts; joins are Skia's miter, the one difference from the
+SVGs) into `brand/tree/`, and hands the Settings sidebar its iconset entries.
+Chromium 153 draws the `..._old` variants (the RoundedIcons feature is off by
+default), and the touch variants in touch mode; both are replaced.
+
+| Surface | Masters -> upstream files |
+| --- | --- |
+| Toolbar | back, forward, reload, stop, home, app-menu (three hexagons), download (+ in progress, menu), extensions, star / star-filled (address bar), person (avatar) |
+| App menu | new-tab, new-window, incognito, key (passwords), history, bookmarks, tab-groups, trash, zoom, print, find, share, tools, help, settings, exit |
+| Address bar | mark (the chip of internal pages), tune (secure page info), info (http), warning (not secure), dangerous |
+| Settings sidebar (`swarm-ui-icons.patch`) | person, key, shield, speed, palette, search, default-browser, power, translate, download, accessibility, system, reset, extensions, ai; the About item is the mark (`swarm-ui-logos.patch`) |
+
+The exact file list is `TARGETS` and `SETTINGS_ICONS` in `icons_ui.py` (50
+`.icon` files from 32 masters; 15 Settings entries, each replaced in every
+iconset of the file). Not redrawn yet: the tab strip (new-tab plus, tab close,
+audio and mute), the submenus of the app menu (More tools, Help, Cast, save and
+share), the side panel's header buttons, page-content illustrations such as the
+empty Downloads picture, and the tab favicons of internal pages that bring their
+own (Settings' gear, History's clock).
 
 **Names (`swarm-ui-names.patch`).** `chrome://chrome-urls` writes its title
 and heading as literals in its page files; they become "SWARM Browser pages".

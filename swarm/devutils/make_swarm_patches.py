@@ -720,6 +720,65 @@ def edit_settings_icons(text, path):
     return text
 
 
+# ------------------------------------------- 12. WebUI in amber (G3)
+# Settings, Extensions, History and the other WebUI pages of Chromium 153 do
+# not load the browser's generated colours (no chrome://theme/colors.css);
+# they fall back to fixed values in cr_shared_vars.css (Material baseline
+# blue) and the Google blue palette beside them. Both become SWARM's amber
+# family, light and dark: the selected Settings item, links, toggles, focus
+# rings and buttons. Text on the accent stays readable: dark #0E1116 on honey
+# in dark mode, white on #8A4B03 (6.4:1) in light mode.
+SWARM_FALLBACK_LIGHT = {
+    'primary': (138, 75, 3), 'primary-container': (255, 233, 168),
+    'on-primary-container': (74, 40, 2), 'secondary-container': (255, 240, 200),
+    'on-secondary-container': (74, 40, 2), 'inverse-primary': (255, 201, 77),
+    'tonal-container': (255, 233, 168), 'on-tonal-container': (74, 40, 2),
+    'tonal-outline': (245, 166, 35), 'divider': (240, 223, 184),
+}
+SWARM_FALLBACK_DARK = {
+    'primary': (245, 166, 35), 'on-primary': (14, 17, 22),
+    'primary-container': (110, 60, 3), 'on-primary-container': (255, 233, 168),
+    'secondary-container': (74, 48, 8), 'on-secondary-container': (255, 233, 168),
+    'inverse-primary': (138, 75, 3), 'tonal-container': (74, 48, 8),
+    'on-tonal-container': (255, 233, 168), 'tonal-outline': (184, 106, 6),
+}
+SWARM_BLUE_TO_AMBER = {
+    50: (255, 248, 231), 100: (255, 233, 168), 200: (255, 217, 120),
+    300: (245, 166, 35), 400: (232, 137, 12), 500: (212, 121, 8),
+    600: (138, 75, 3), 700: (110, 60, 3), 800: (92, 50, 3), 900: (74, 40, 2),
+}
+
+
+def _set_fallbacks(block, values, path):
+    import re as _re
+    for name, (r, g, b) in values.items():
+        pattern = _re.compile(r'(--cr-fallback-color-%s: )rgb\([^)]*\);' % _re.escape(name))
+        if len(pattern.findall(block)) != 1:
+            raise SystemExit(f'{path}: --cr-fallback-color-{name} not found once -- upstream changed')
+        block = pattern.sub(lambda m: f'{m.group(1)}rgb({r}, {g}, {b});', block)
+    ripple = '--cr-fallback-color-state-ripple-primary-rgb_: '
+    i = block.index(ripple) + len(ripple)
+    j = block.index(';', i)
+    return block[:i] + '245, 166, 35' + block[j:]
+
+
+def edit_webui_fallback_colours(text, path):
+    dark_at = text.index('@media (prefers-color-scheme: dark)')
+    light, dark = text[:dark_at], text[dark_at:]
+    return (_set_fallbacks(light, SWARM_FALLBACK_LIGHT, path)
+            + _set_fallbacks(dark, SWARM_FALLBACK_DARK, path))
+
+
+def edit_google_blues(text, path):
+    import re as _re
+    for shade, (r, g, b) in SWARM_BLUE_TO_AMBER.items():
+        pattern = _re.compile(r'--google-blue-%d-rgb: [0-9, ]+;  /\* #[0-9a-f]{6} \*/' % shade)
+        if len(pattern.findall(text)) != 1:
+            raise SystemExit(f'{path}: --google-blue-{shade}-rgb not found once -- upstream changed')
+        text = pattern.sub(f'--google-blue-{shade}-rgb: {r}, {g}, {b};  /* SWARM: #{r:02x}{g:02x}{b:02x} */', text)
+    return text
+
+
 # Patches whose diff is taken against the file as the earlier SWARM patches
 # leave it, because an earlier patch edits the same file.
 CHAINED = {'swarm-ui-icons.patch'}
@@ -787,6 +846,10 @@ PATCHES = {
     },
     'swarm-ui-icons.patch': {
         'chrome/browser/resources/settings/icons.html.ts': edit_settings_icons,
+    },
+    'swarm-webui-colour.patch': {
+        'ui/webui/resources/cr_elements/cr_shared_vars.css':
+            lambda t, p: edit_google_blues(edit_webui_fallback_colours(t, p), p),
     },
 }
 
