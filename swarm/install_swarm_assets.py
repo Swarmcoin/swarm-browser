@@ -276,6 +276,13 @@ def main():
         print(f'  strings: {GRD_RELPATH.name}: {strings_counts["word_replacements"]} x Chromium -> {PRODUCT}, '
               f'{strings_counts["explicit_messages"]} about-page messages set, '
               f'{strings_counts["remaining_word_chromium"]} protected/skipped uses kept')
+        # SWARM: the rest of the UI strings (settings, components): the
+        # Chromium/Chrome rules and the few messages set by name
+        # (swarm/brand/ui_strings.py). Runs after product_strings.py.
+        from ui_strings import rewrite as rewrite_ui_strings
+        ui_report = rewrite_ui_strings(source_tree, args.dry_run)
+        print(f'  ui strings: {len(ui_report["files"])} files, {ui_report["totals"]}, '
+              f'{len(ui_report["explicit"])} messages set by name')
         print(f'SWARM assets installed: {icons} icon files, {exts} extensions')
     elif not args.host_dest:
         raise SystemExit('give --source-tree, --host-dest, or both')
