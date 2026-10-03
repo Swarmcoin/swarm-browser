@@ -18,7 +18,7 @@ Upstream provenance of this checkout:
 | `ungoogled-chromium-windows` tag | `153.0.8010.52-1.1`, commit `4fe389fe08dac85cead3ea77afe59834dbbc9673` |
 | `ungoogled-chromium` submodule | tag `153.0.8010.52-1`, commit `a638756eb14c8b6ce64b4b2a067afea5d4207bf4` |
 | Chromium | `153.0.8010.52` (`ungoogled-chromium/chromium_version.txt`) |
-| SWARM layer build | `swarm/revision.txt` (currently `4`: build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-4-`) |
+| SWARM layer build | `swarm/revision.txt` (currently `5`: build 7, the built-in wallet on the SWARM mainnet restarted on 2 October 2026 (wallet host 0.2.0 and wallet extension 0.2.0, see **The bundled wallet host**). `4` was build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-5-`) |
 
 Licences: upstream `LICENSE` files are untouched. The SWARM notices, and the
 BSD-3 notices for Chromium and ungoogled-chromium, are in `NOTICE-SWARM.md` at
@@ -630,13 +630,30 @@ own installer). Building the host in CI is the remaining half of this task.
 An x86 or arm64 build made on a machine with `host-dist` would carry the same
 x64 host; only x64 is a release target.
 
-Locally built at the time of writing (`D:/swarm-work/host-dist/SHA256SUMS.txt`):
+Locally built for build 7 (`D:/swarm-work/host-dist/SHA256SUMS.txt`, 2026-10-03):
+host 0.2.0 from `privacy-wallet-browser` branch `relaunch/browser-host`
+(`dba9efa7`, on `79c0c039`), with the wallet core of SWARM Wallet
+0.1.0-mainnet.10 (`resources/app.asar.unpacked/build/native.node` of
+`SWARM-Wallet-0.1.0-mainnet.10-x64.zip`):
 
 ```
-692b798bc05f6ec43b4678a93daeb5477b73db410aa4505e99e4b41fe7192ec7  swarm-wallet-host.exe
-2dcd84bb378c127723f9eae3862d2d4fbe67e3333d2ceac6fd0b7d0c806bb912  native.node
-ccb707f2fb22dd7444d469dd284299fddb79b6dab7efd53a18a3df96e7b05887  green.swarm.wallet_host.json
+91f637f09270c777e4f860ce53b5db138a9170cfa3ba2a12d0fdb526a3c5231c  swarm-wallet-host.exe
+40de81730e9a5fbaa857532c6ffae03e021f408908406469013824d2b1375183  native.node
+140b8dba9c3614da2248ab517dbd42644c1f159dd9eade6944a9454757b49ece  green.swarm.wallet_host.json
 ```
+
+Host 0.2.0 talks to the restarted SWARM mainnet (genesis
+`01b76d8a0f18c502b23ab6605e26296d189aa5770fc4a34155e5c7b250a0eff2`,
+indexer `https://lwd-main.swarm.green:443`). A browser wallet made by an
+earlier host was made on the abandoned chain (`01c34428…afdd`); host 0.2.0
+keeps a record beside the wallet file
+(`swarm-mainnet/swarm-browser-wallet.dat.record.json`, the genesis only) and,
+at the first unlock of a wallet without one, moves it once with the core's
+`move_wallet_to_restarted_chain` (same keys and addresses, birthday at the new
+chain's first block, byte-identical backup
+`swarm-browser-wallet.dat.before-network-restart-<unix>.bak` beside it) before
+opening it. Build 6 shipped host 0.1.0 (`692b798b…2ec7`, core `2dcd84bb…b912`),
+which can no longer reach any server.
 
 Those are one machine's outputs, not a release: CI has never built the host,
 and nothing here is signed. (The manifest inside the build output differs from
@@ -654,8 +671,8 @@ wallet repository, which is where they are developed and tested:
 | | |
 | --- | --- |
 | Repository | `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) |
-| Branch | `codex/browser-wallet-host` |
-| Commit | `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
+| Branch | `relaunch/browser-host` (SWARM Wallet: build 7); `codex/browser-wallet-host` before |
+| Commit | wallet `dba9efa7` (2026-10-03, extension 0.2.0: the restart sentence and explorer links); rewards `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
 | `browser/extension` | -> `swarm/extensions/wallet`, 22 files |
 | `browser/rewards-extension` | -> `swarm/extensions/rewards`, 16 files |
 | Left behind | `test/`, `package.json`, `node_modules` |
