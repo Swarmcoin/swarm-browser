@@ -19,6 +19,8 @@ import {
   walletPopupUrl,
 } from "../../extensions/start/lib/destinations.js";
 import { NOT_YET, PRIVACY_SWITCHES, countLabel, switchCount } from "../../extensions/start/lib/privacy.js";
+import { PRICE_URL } from "../../extensions/start/lib/price.js";
+import { SWITCH_HELP, SWITCH_LABEL } from "../../extensions/start/lib/price-view.js";
 
 const manifest = JSON.parse(readFileSync(path.join(START_DIR, "manifest.json"), "utf8"));
 
@@ -56,15 +58,51 @@ test("manifest: new tab, side panel, toolbar button, nothing web-accessible", ()
   assert.equal(manifest.externally_connectable, undefined);
 });
 
-test("manifest: the only servers it may reach are the two status files", () => {
+test("manifest: the only servers it may reach are the two status files and the price service", () => {
   assert.deepEqual(manifest.host_permissions, [
     "https://lwd-main.swarm.green/status.json",
     "https://swarm.green/data/swarm-map-live.json",
+    "https://wallet.swarm.green/api/price/swm",
   ]);
+  assert.equal(manifest.host_permissions[2], PRICE_URL, "the one price address, as lib/price.js has it");
   const csp = manifest.content_security_policy.extension_pages;
   const connect = csp.split(";").map((s) => s.trim()).find((s) => s.startsWith("connect-src"));
-  assert.equal(connect, "connect-src https://lwd-main.swarm.green https://swarm.green");
+  assert.equal(connect, "connect-src https://lwd-main.swarm.green https://swarm.green https://wallet.swarm.green");
   assert.match(csp, /script-src 'self';/);
+  assert.match(csp, /style-src 'self'/);
+  assert.match(csp, /img-src 'self'/);
+});
+
+test("what it contacts is said where people read it", () => {
+  assert.match(manifest.description, /wallet\.swarm\.green/);
+  assert.match(manifest.description, /unless you switch that off/);
+  assert.doesNotMatch(manifest.description, /Asks no server anything/);
+  const welcome = readFileSync(path.join(START_DIR, "welcome.html"), "utf8").replace(/\s+/g, " ");
+  assert.match(welcome, /SWARM price service \(wallet\.swarm\.green\)/);
+  assert.match(welcome, /Show SWM price \(USD\)/);
+  assert.doesNotMatch(welcome, /asks no server anything/i);
+  const newtab = readFileSync(path.join(START_DIR, "newtab.html"), "utf8");
+  assert.doesNotMatch(newtab, /asks no server anything/i, "no longer true while the price is on");
+  for (const page of ["newtab.html", "price.html"]) {
+    const html = readFileSync(path.join(START_DIR, page), "utf8").replace(/\s+/g, " ");
+    assert.ok(html.includes(`>${SWITCH_LABEL}</label>`), `${page}: the switch label`);
+    assert.ok(html.includes(SWITCH_HELP), `${page}: the switch's help text, word for word`);
+  }
+  const code = readFileSync(path.join(START_DIR, "newtab.js"), "utf8");
+  assert.match(code, /wallet\.swarm\.green\/api\/price\/swm/);
+});
+
+test("the price page links only to the fixed listing hosts", () => {
+  const html = readFileSync(path.join(START_DIR, "price.html"), "utf8");
+  for (const [, url] of html.matchAll(/href="(https?:[^"]*)"/g)) assert.fail(`price.html has a hard-coded link ${url}`);
+  for (const id of ["pp-src-geckoterminal", "pp-src-dexscreener"]) {
+    assert.match(html, new RegExp(`id="${id}" target="_blank" rel="noopener noreferrer"`));
+  }
+});
+
+test("nothing for tests ships: the folder holds no test/ and no package.json", () => {
+  const names = readdirSync(START_DIR);
+  assert.ok(!names.includes("test") && !names.includes("tests") && !names.includes("package.json"), names.join(", "));
 });
 
 test("every file the manifest and pages name exists", () => {
@@ -79,10 +117,10 @@ test("every file the manifest and pages name exists", () => {
   walk(START_DIR);
   for (const icon of Object.values(manifest.icons)) assert.ok(files.has(icon), icon);
   for (const icon of Object.values(manifest.action.default_icon)) assert.ok(files.has(icon), icon);
-  for (const page of ["newtab.html", "navigator.html", "welcome.html", "privacy.html", manifest.background.service_worker]) {
+  for (const page of ["newtab.html", "navigator.html", "welcome.html", "privacy.html", "price.html", manifest.background.service_worker]) {
     assert.ok(files.has(page), page);
   }
-  for (const page of ["newtab.html", "navigator.html", "welcome.html", "privacy.html"]) {
+  for (const page of ["newtab.html", "navigator.html", "welcome.html", "privacy.html", "price.html"]) {
     const html = readFileSync(path.join(START_DIR, page), "utf8");
     for (const [, ref] of html.matchAll(/(?:src|href)="([^"#:]+)(?:#[^"]*)?"/g)) {
       assert.ok(files.has(ref), `${page} -> ${ref}`);
@@ -93,7 +131,16 @@ test("every file the manifest and pages name exists", () => {
 });
 
 test("no visible string names Google, ungoogled or Chromium", () => {
-  for (const file of ["newtab.html", "navigator.html", "welcome.html", "privacy.html", "lib/privacy.js", "lib/destinations.js"]) {
+  for (const file of [
+    "newtab.html",
+    "navigator.html",
+    "welcome.html",
+    "privacy.html",
+    "price.html",
+    "lib/privacy.js",
+    "lib/destinations.js",
+    "lib/price-view.js",
+  ]) {
     const text = readFileSync(path.join(START_DIR, file), "utf8");
     assert.doesNotMatch(text, /google|chromium/i, file);
   }

@@ -1,9 +1,14 @@
 /**
  * SWARM Start, the new-tab page.
  *
- * What this page sends anywhere: nothing, unless the person turns on
- * "Network now" in its settings; then two GETs per new tab, to the public
- * status files named in lib/format.js, without cookies or a referrer.
+ * What this page sends anywhere:
+ *  - the SWM price, while "Show SWM price (USD)" is on (the default): one GET
+ *    to https://wallet.swarm.green/api/price/swm when the page opens and then
+ *    once a minute while it is in view, never while it is in a background tab
+ *    (lib/price-feed.js, lib/price.js; no cookies, no referrer, nothing about
+ *    the person). Off = no request and no tile.
+ *  - "Network now", only when the person turns it on: two GETs per new tab,
+ *    to the public status files named in lib/format.js, likewise bare.
  * Searching hands the text to the browser's default search engine
  * (chrome.search.query), exactly as the address bar would.
  */
@@ -13,6 +18,9 @@ import { MAP_URL, STATUS_URL, networkSummary } from "./lib/format.js";
 import { countLabel, switchCount } from "./lib/privacy.js";
 import { DESTINATIONS } from "./lib/destinations.js";
 import { openDestination, openSettings, openWallet } from "./open.js";
+import { PRICE_NOTE, fetchPrice } from "./lib/price.js";
+import { createPriceFeed } from "./lib/price-feed.js";
+import { tileView } from "./lib/price-view.js";
 
 const $ = (id) => document.getElementById(id);
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -75,7 +83,9 @@ function wireSettings() {
       settings = normalize(changes[STORAGE_KEY].newValue);
       applySettings();
     }
+    if (area === "local") priceFeed.storageChanged(changes);
   });
+  $("set-price").addEventListener("change", (event) => priceFeed.setEnabled(event.target.checked));
 }
 
 /* ── search ─────────────────────────────────────────────────────────── */
@@ -186,12 +196,85 @@ function wireTiles() {
   $("privacy-label").textContent = countLabel(n).replace(/^\d+\s*/, "");
 }
 
+/* ── the SWM price tile ──────────────────────────────────────────────── */
+
+/** Shows or hides an HTML or SVG element (SVG elements have no .hidden). */
+function show(node, visible) {
+  node.toggleAttribute("hidden", !visible);
+}
+
+const priceFeed = createPriceFeed({
+  storage: chrome.storage.local,
+  fetchPrice: () => fetchPrice(),
+  isVisible: () => document.visibilityState === "visible",
+  onChange: paintPriceTile,
+});
+
+function paintPriceTile(feed) {
+  const tile = $("tile-price");
+  $("set-price").checked = feed.enabled;
+  if (!feed.loaded || !feed.enabled) {
+    show(tile, false);
+    return;
+  }
+  const v = tileView(feed.reading, Date.now(), feed);
+  show(tile, true);
+  tile.classList.toggle("greyed", v.greyed);
+  $("price-dot").setAttribute("class", v.dot ? `dot ${v.dot}` : "dot");
+  const value = $("price-value");
+  value.textContent = v.value;
+  value.classList.toggle("none", v.none);
+  show($("price-unit"), v.unit);
+  const chip = $("price-chip");
+  show(chip, !!v.chip);
+  if (v.chip) {
+    chip.textContent = v.chip.text;
+    chip.className = `price-chip ${v.chip.direction}`;
+  }
+  show($("price-spark"), !!v.spark);
+  $("price-spark-line").setAttribute("d", v.spark ? v.spark.line : "");
+  $("price-spark-area").setAttribute("d", v.spark ? v.spark.area : "");
+  $("price-meta").textContent = v.meta;
+}
+
+function openPricePage() {
+  window.location.assign("price.html");
+}
+
+function wirePrice() {
+  const tile = $("tile-price");
+  const info = $("price-info");
+  const note = $("price-note");
+  note.textContent = PRICE_NOTE;
+  info.title = PRICE_NOTE;
+  info.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const open = note.hidden;
+    show(note, open);
+    info.setAttribute("aria-expanded", String(open));
+  });
+  tile.addEventListener("click", (event) => {
+    if (event.target.closest("#price-info")) return;
+    openPricePage();
+  });
+  tile.addEventListener("keydown", (event) => {
+    if (event.target !== tile) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openPricePage();
+    }
+  });
+  document.addEventListener("visibilitychange", () => priceFeed.visibilityChanged());
+}
+
 /* ── start ──────────────────────────────────────────────────────────── */
 
 renderShortcuts();
 wireSearch();
 wireSettings();
 wireTiles();
+wirePrice();
+priceFeed.start();
 loadSettings().then((loaded) => {
   settings = loaded;
   applySettings();

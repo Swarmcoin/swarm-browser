@@ -19,6 +19,11 @@
   --ink-dim: #9AA4B2;
   --rule: rgba(245, 166, 35, .16);
   --leaf: #3FB950;
+  /* The SWM price (specs/PRICE-DISPLAY.md §3): up, down, ageing, and the grey of an old price. */
+  --up: #3DD68C;
+  --down: #FF5C5C;
+  --amber: #FFB020;
+  --stale: #6B7480;
   --focus: var(--comb);
   --radius: 18px;
   --font-display: "Sora", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
@@ -43,6 +48,7 @@ p { margin: 0; }
 svg.ico { width: 22px; height: 22px; flex: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .mono { font-family: var(--font-mono); }
+[hidden] { display: none !important; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 10px; }
 
 /* ── buttons ─────────────────────────────────────────────────────────── */
@@ -166,15 +172,16 @@ html:not(.motion) .backdrop .motes { display: none; }
 .shortcut .badge { margin-top: -3px; }
 
 .tiles {
-  width: 100%; max-width: 980px; margin-top: 30px;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px;
+  width: 100%; max-width: 1080px; margin-top: 30px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;
 }
 .tile {
   position: relative; display: flex; flex-direction: column; gap: 10px;
   padding: 18px 20px; border-radius: var(--radius);
   background: rgba(22, 26, 33, .82); border: 1px solid var(--rule);
 }
-.tile__head { display: flex; align-items: center; gap: 10px; }
+.tile__head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.tile__head h2 { white-space: nowrap; }
 .tile__head svg { color: var(--honey); }
 .tile__head h2 { font-size: 15px; }
 .tile__head .net { margin-left: auto; }
@@ -261,3 +268,117 @@ kbd { font: 400 12px var(--font-mono); padding: 1px 6px; border-radius: 6px; bor
 .card .head strong { font-size: 14px; }
 .card .head .net { margin-left: auto; }
 .nav__links { display: grid; gap: 6px; margin-top: 6px; padding: 0 4px; font-size: 13px; }
+
+/* ── the SWM price: tile on the start page (specs/PRICE-DISPLAY.md §3) ── */
+.price-tile { cursor: pointer; }
+.price-tile:hover { border-color: rgba(245, 166, 35, .55); background: rgba(31, 36, 45, .9); }
+.price-tile .tile__head { gap: 8px; }
+.price-mark { width: 24px; height: 12px; flex: none; }
+.price-label {
+  font: 400 11.5px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-dim); margin: 0;
+}
+.tile__head h2.price-label { font-size: 11.5px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--stale); }
+.dot.fresh { background: var(--honey); box-shadow: 0 0 0 3px rgba(245, 166, 35, .18); }
+.dot.ageing { background: transparent; border: 2px solid var(--amber); }
+.price-info {
+  margin-left: auto; padding: 0 2px; border: 0; background: none; cursor: pointer;
+  font: 400 15px/1 var(--font-body); color: var(--ink-dim);
+}
+.price-info:hover, .price-info[aria-expanded="true"] { color: var(--comb); }
+.price-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 7px; margin-top: 2px; }
+.price-value { font: 600 30px/1.1 var(--font-display); letter-spacing: -.01em; color: var(--ink); }
+.price-value.none { font-size: 17px; color: var(--ink-dim); }
+.price-unit { font: 400 11px/1 var(--font-mono); color: var(--ink-dim); }
+.price-chip {
+  margin-left: auto; align-self: center; white-space: nowrap;
+  padding: 2px 9px; border-radius: 999px; border: 1px solid rgba(154, 164, 178, .3);
+  font: 400 11.5px/1.5 var(--font-mono); color: var(--ink-dim);
+}
+.price-chip.up { color: var(--up); border-color: rgba(61, 214, 140, .35); background: rgba(61, 214, 140, .08); }
+.price-chip.down { color: var(--down); border-color: rgba(255, 92, 92, .35); background: rgba(255, 92, 92, .08); }
+.price-spark { display: block; width: 100%; height: 46px; overflow: visible; }
+.spark-line {
+  fill: none; stroke: var(--honey); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.spark-top { stop-color: var(--honey); stop-opacity: .3; }
+.spark-bottom { stop-color: var(--honey); stop-opacity: 0; }
+.tile p.price-meta, .price-meta { font: 400 11px/1.5 var(--font-mono); color: var(--ink-dim); margin-top: auto; }
+.tile p.price-note { font-size: 12px; color: #C9D2DC; }
+
+/* An old price, or one not yet confirmed since this page opened, goes grey. */
+.greyed .price-value, .greyed .pp-value { color: var(--ink-dim); }
+.greyed .price-chip { color: var(--ink-dim); border-color: rgba(154, 164, 178, .3); background: transparent; }
+.greyed .spark-line { stroke: var(--stale); }
+.greyed .spark-top, .greyed .spark-bottom { stop-color: var(--stale); }
+.greyed .pp-end { fill: var(--stale); }
+
+/* ── the SWM price page (price.html, §6.2) ───────────────────────────── */
+.pp { position: relative; z-index: 1; width: min(860px, 100% - 32px); margin: 0 auto; padding: 32px 0 56px; }
+.pp__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-bottom: 18px; }
+.pp-back svg { transform: scaleX(-1); }
+.pp-mark { width: 40px; height: 19px; }
+.pp__head h1 { font-size: 24px; }
+.pp-fresh {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  font: 400 12px/1.4 var(--font-mono); color: var(--ink-dim);
+}
+.pp-card {
+  margin-top: 14px; padding: 20px 22px; border-radius: var(--radius);
+  background: rgba(22, 26, 33, .86); border: 1px solid var(--rule);
+}
+.pp-card .price-label { margin-bottom: 12px; }
+.pp-price { display: flex; align-items: baseline; gap: 9px; }
+.pp-value { font: 600 48px/1.05 var(--font-display); letter-spacing: -.02em; color: var(--ink); }
+.pp-value.none { font-size: 22px; color: var(--ink-dim); }
+.pp-value.landed { animation: pp-land .5s ease-out; }
+@keyframes pp-land { from { opacity: .35; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pp-value.landed { animation: none; } }
+.pp-price .price-unit { font-size: 13px; }
+.pp-eth { margin-top: 4px; font: 400 13px/1.4 var(--font-mono); color: var(--ink-dim); }
+.pp-chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 18px; }
+.pp-chips .price-chip { margin-left: 0; }
+.pp-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.pp-readout { font: 400 12px/1.4 var(--font-mono); color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-ranges {
+  display: flex; gap: 2px; padding: 2px; border-radius: 999px;
+  background: var(--hive-black); border: 1px solid rgba(154, 164, 178, .22);
+}
+.pp-range {
+  padding: 3px 11px; border: 0; border-radius: 999px; background: transparent; cursor: pointer;
+  font: 400 12px/1.4 var(--font-mono); color: var(--ink-dim);
+}
+.pp-range[aria-pressed="true"] { background: var(--surface-2); color: var(--honey); }
+.pp-range:disabled { opacity: .35; cursor: default; }
+.pp-chart { display: block; width: 100%; height: auto; overflow: visible; cursor: crosshair; }
+.pp-guide { stroke: rgba(154, 164, 178, .16); stroke-width: 1; stroke-dasharray: 2 5; }
+.pp-cursor { stroke: var(--ink-dim); stroke-width: 1; stroke-opacity: .5; }
+.pp-end { fill: var(--honey); }
+.pp-hover { fill: var(--ink); stroke: var(--honey); stroke-width: 1.5; }
+.pp-label { font: 400 11px var(--font-mono); fill: var(--ink-dim); }
+.pp-label.latest { fill: var(--ink); }
+.pp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 14px; }
+.pp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; margin: 0; }
+.pp-stats dt { font: 600 12px/1.3 var(--font-body); color: var(--ink-dim); }
+.pp-stats dd { margin: 3px 0 0; font: 400 14px/1.3 var(--font-mono); color: var(--ink); }
+.pp-source {
+  display: flex; align-items: center; gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid rgba(245, 166, 35, .08); color: var(--ink); text-decoration: none;
+}
+.pp-source:hover { color: var(--comb); }
+.pp-src-name { flex: 1; font-weight: 600; font-size: 14px; }
+.pp-src-price { font: 400 13px/1.3 var(--font-mono); color: var(--ink); }
+.pp-src-mark { width: 16px; text-align: center; color: var(--up); }
+.pp-source.failed .pp-src-name, .pp-source.failed .pp-src-price, .pp-source.failed .pp-src-mark { color: var(--stale); }
+.pp-id-row { display: flex; align-items: center; gap: 10px; padding-top: 10px; }
+.pp-id-name { width: 48px; font-size: 13px; color: var(--ink-dim); }
+.pp-id-row .mono { flex: 1; font-size: 13px; color: var(--ink); }
+.pp-copy {
+  padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface-2);
+  color: var(--comb); font: 600 12px/1.4 var(--font-body); cursor: pointer;
+}
+.pp-copy:hover { border-color: var(--honey); }
+.pp-foot .pp-note { color: #C9D2DC; font-size: 14px; margin-bottom: 6px; }
+.pp-foot .fine { margin-top: 6px; font-size: 13px; color: var(--ink-dim); }

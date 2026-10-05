@@ -45,8 +45,15 @@
             <label for="set-network">Network now</label>
             <input id="set-network" type="checkbox" role="switch" data-key="networkTile" />
             <p class="hint">
-              Off by default: a new tab asks no server anything. When on, each new tab reads the current block height
-              and the nodes online from lwd-main.swarm.green and swarm.green. Nothing about you is sent.
+              Off by default. When on, each new tab reads the current block height and the nodes online from
+              lwd-main.swarm.green and swarm.green. Nothing about you is sent.
+            </p>
+          </div>
+          <div class="switch">
+            <label for="set-price">Show SWM price (USD)</label>
+            <input id="set-price" type="checkbox" role="switch" data-price-switch />
+            <p class="hint">
+              The price comes from the SWARM price service (wallet.swarm.green), which reads the SWM/ETH pool on Base from GeckoTerminal and DexScreener. Nothing about you is sent. Switch this off and SWARM Start makes no price requests. The SWARM Wallet has its own switch in its Settings.
             </p>
           </div>
         </div>
@@ -86,6 +93,49 @@
             </div>
           </article>
 
+          <!-- The SWM price (specs/PRICE-DISPLAY.md §3, §7). Shown once the switch is read and on;
+               the whole tile opens price.html. -->
+          <article
+            class="tile price-tile"
+            id="tile-price"
+            role="link"
+            tabindex="0"
+            aria-labelledby="tile-price-title"
+            aria-describedby="price-meta"
+            hidden
+          >
+            <div class="tile__head">
+              <svg class="price-mark" viewBox="0 0 1000 467.95" aria-hidden="true"><use href="icons.svg#i-mark-color" /></svg>
+              <h2 id="tile-price-title" class="price-label">SWM price</h2>
+              <span class="dot" id="price-dot" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="price-info"
+                id="price-info"
+                aria-label="About this price"
+                aria-expanded="false"
+                aria-controls="price-note"
+              >ⓘ</button>
+            </div>
+            <div class="price-main">
+              <span class="price-value" id="price-value">…</span>
+              <span class="price-unit" id="price-unit">USD</span>
+              <span class="price-chip" id="price-chip" hidden></span>
+            </div>
+            <svg class="price-spark" id="price-spark" viewBox="0 0 300 46" preserveAspectRatio="none" aria-hidden="true" hidden>
+              <defs>
+                <linearGradient id="price-spark-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop class="spark-top" offset="0" />
+                  <stop class="spark-bottom" offset="1" />
+                </linearGradient>
+              </defs>
+              <path class="spark-area" id="price-spark-area" fill="url(#price-spark-fill)" d="" />
+              <path class="spark-line" id="price-spark-line" d="" />
+            </svg>
+            <p class="price-meta" id="price-meta">Base · Uniswap v4</p>
+            <p class="price-note" id="price-note" hidden></p>
+          </article>
+
           <article class="tile" id="tile-privacy" aria-labelledby="tile-privacy-title">
             <div class="tile__head">
               <svg class="ico" aria-hidden="true"><use href="icons.svg#i-shield" /></svg>
@@ -103,7 +153,7 @@
               <span class="net">SWARM mainnet</span>
             </div>
             <div id="network-off">
-              <p>Off. This page asks no server anything until you turn this on.</p>
+              <p>Off. Nothing is read for this tile until you turn it on.</p>
               <div class="actions"><button class="btn" type="button" id="network-on">Turn on</button></div>
             </div>
             <div id="network-on-view" hidden>

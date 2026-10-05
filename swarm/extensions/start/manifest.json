@@ -2,12 +2,16 @@
   "manifest_version": 3,
   "name": "SWARM Start",
   "short_name": "SWARM Start",
-  "version": "0.1.0",
-  "description": "The SWARM start page for new tabs, the SWARM Navigator side panel and the welcome page. Asks no server anything unless you turn on its live network tile.",
+  "version": "0.2.0",
+  "description": "The SWARM start page for new tabs, the SWARM Navigator side panel and the welcome page. Asks the SWARM price service (wallet.swarm.green) for the SWM price unless you switch that off, and reads the network status only if you turn on its live network tile.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA07FBXVTPocD6qcAsyZmvoxAlPyZv8kLyHUdRi1cbVKTFEMuQv1QR6h6a6+lJY1hY/yTWafeR2y3Qofp5jGwQ8NpJ7U8WYFZBtV5Fx6w/EIS55yRGtjtws4VBEsjNQCZsRvVXLc3lQVU8PIsF4D4SDxTzLFRpgkdvdRgalyqvYkln11IKX1VxVln97nl01uvRB3JCGlKoV1zzKf/PuLnDdvvEVmBtcoPi+LExE/8NHkVfkqBbwOOI/frT7n/0LC20VfMaKOaebg9HpRo5LceOADlnUkT3dr+zdrTig+HvreH/EcbPf9BX9fDJ0xHte4ybagE83EhkBhJ8K6idiHYBrwIDAQAB",
   "minimum_chrome_version": "153",
   "permissions": ["storage", "sidePanel", "search"],
-  "host_permissions": ["https://lwd-main.swarm.green/status.json", "https://swarm.green/data/swarm-map-live.json"],
+  "host_permissions": [
+    "https://lwd-main.swarm.green/status.json",
+    "https://swarm.green/data/swarm-map-live.json",
+    "https://wallet.swarm.green/api/price/swm"
+  ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
@@ -34,7 +38,7 @@
     "type": "module"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://lwd-main.swarm.green https://swarm.green; img-src 'self'; font-src 'self'; style-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://lwd-main.swarm.green https://swarm.green https://wallet.swarm.green; img-src 'self'; font-src 'self'; style-src 'self'"
   },
   "content_scripts": [],
   "web_accessible_resources": []
