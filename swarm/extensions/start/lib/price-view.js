@@ -27,7 +27,6 @@ import {
   formatUsdPrice,
   formatUsdValue,
   freshnessText,
-  metaLine,
   nearestIndex,
   pickRange,
   rangeSeries,
@@ -54,6 +53,18 @@ export const REPAINT_MS = 5000;
 /** The stored switch: anything but an explicit false is the default, ON. */
 export function priceEnabled(stored) {
   return typeof stored === "boolean" ? stored : SHOW_PRICE_DEFAULT;
+}
+
+/**
+ * The tile's meta line: "GeckoTerminal · updated 12 s ago". Not lib/price.js
+ * metaLine(), which also names the chain and the exchange: the owner's
+ * amendment of 2026-10-05 21:0x UTC shows no network data and no liquidity.
+ */
+export function tileMeta(reading, nowMs, timeZone) {
+  const parts = [];
+  if (reading && reading.source) parts.push(SOURCE_NAMES[reading.source]);
+  parts.push(freshnessText(reading, nowMs, timeZone));
+  return parts.join(" · ");
 }
 
 /** The meta line wraps only between its parts, never inside "updated 12 s ago". */
@@ -90,7 +101,7 @@ export function tileView(reading, nowMs, { live = false, attempted = false } = {
       unit: true,
       chip: formatChange(reading.change_pct_h24, "24h"),
       spark,
-      meta: keepTogether(metaLine(reading, nowMs, timeZone)),
+      meta: keepTogether(tileMeta(reading, nowMs, timeZone)),
     };
   }
   const waiting = !attempted && !reading;
@@ -102,7 +113,7 @@ export function tileView(reading, nowMs, { live = false, attempted = false } = {
     chip: null,
     spark: null,
     meta: keepTogether(
-      reading ? `Base · Uniswap v4 · last reading ${clockTime(reading.fetchedAt, timeZone)}` : "Base · Uniswap v4",
+      reading ? `last reading ${clockTime(reading.fetchedAt, timeZone)}` : "SWARM price service",
     ),
   };
 }
@@ -122,7 +133,10 @@ export function isListingUrl(url) {
   return url === DEXSCREENER_URL || url === GECKOTERMINAL_URL;
 }
 
-/** The price page above the chart, the stats and the sources (spec §6.2). */
+/**
+ * The price page above the chart, the stats and the sources (spec §6.2 as
+ * amended: no liquidity and no network row).
+ */
 export function pageView(reading, nowMs, { live = false, attempted = false } = {}, timeZone) {
   const f = freshnessLook(reading, nowMs, { live });
   const r = f.usable ? reading : null;
@@ -135,12 +149,10 @@ export function pageView(reading, nowMs, { live = false, attempted = false } = {
   ].map(([id, pct, label]) => ({ id, change: formatChange(pct, label) }));
   const stats = r
     ? {
-        liquidity: formatUsdAmount(r.liquidity_usd),
         volume: formatUsdAmount(r.volume_24h_usd),
         fdv: formatUsdAmount(r.fdv_usd),
         trades: r.transactions_24h ? `${r.transactions_24h.buys} / ${r.transactions_24h.sells}` : "—",
         fee: r.fee_pct === null ? "—" : `${Math.round(r.fee_pct * 100) / 100} %`,
-        network: "Base",
       }
     : null;
   const sources = SOURCES.map((s) => {

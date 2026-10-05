@@ -71,7 +71,7 @@ test("tile, fresh and confirmed: price, chip, sparkline, meta line", () => {
   assert.equal(v.dot, "fresh");
   assert.deepEqual(v.chip, { text: "▲ 36.7 % 24h", direction: "up" });
   assert.ok(v.spark && v.spark.line.startsWith("M0 ") && v.spark.area.endsWith("Z"));
-  assert.equal(v.meta, [nbsp("Base"), nbsp("Uniswap v4"), "GeckoTerminal", nbsp("updated 12 s ago")].join(" · "));
+  assert.equal(v.meta, ["GeckoTerminal", nbsp("updated 12 s ago")].join(" · "));
 });
 
 test("tile: a remembered reading is greyed until this page confirms it", () => {
@@ -97,11 +97,12 @@ test("tile: ageing, stale, unavailable, nothing yet", () => {
   assert.equal(gone.none, true);
   assert.equal(gone.chip, null);
   assert.equal(gone.spark, null);
-  assert.equal(gone.meta, keepTogether("Base · Uniswap v4 · last reading 18:07"));
+  assert.equal(gone.meta, keepTogether("last reading 18:07"));
 
   const waiting = tileView(null, T0, { live: false, attempted: false }, UTC);
   assert.equal(waiting.value, "…");
   assert.equal(waiting.unit, true);
+  assert.equal(waiting.meta, keepTogether("SWARM price service"));
   const failed = tileView(null, T0, { live: false, attempted: true }, UTC);
   assert.equal(failed.value, "Price unavailable");
 });
@@ -135,12 +136,10 @@ test("page from the live relay: price, ETH, three chips, stats, sources", () => 
     ["0.0 % 1h", "▲ 10.6 % 6h", "▲ 42.4 % 24h"],
   );
   assert.deepEqual(v.stats, {
-    liquidity: "$3,837",
     volume: "$482.89",
     fdv: "$9,305",
     trades: "5 / 0",
     fee: "0.9 %",
-    network: "Base",
   });
   assert.deepEqual(
     v.sources.map((s) => [s.id, s.name, s.price, s.mark, s.ok, s.url]),
@@ -237,6 +236,21 @@ test("hover: a value and its hour, and 'now' on the live last point", () => {
   assert.match(first.text, /^\$0\.\d{4} · \d{1,2} Oct, \d\d:00$/);
   assert.equal(hoverView(null, 10), null);
   assert.equal(hoverView(c, Number.NaN), null);
+});
+
+test("owner amendment 2026-10-05: no liquidity and no network data on the tile or the page", () => {
+  const r = live();
+  for (const nowMs of [LIVE_T + 3000, LIVE_T + 12 * 60_000, LIVE_T + 2 * 3600_000]) {
+    const t = tileView(r, nowMs, { live: true, attempted: true }, UTC);
+    assert.doesNotMatch(t.meta, /Base|Uniswap|iquidity/, t.meta);
+  }
+  assert.doesNotMatch(tileView(null, LIVE_T, {}, UTC).meta, /Base|Uniswap/);
+  const v = pageView(r, LIVE_T, { live: true }, UTC);
+  assert.deepEqual(Object.keys(v.stats), ["volume", "fdv", "trades", "fee"]);
+  const html = readFileSync(new URL("../../extensions/start/price.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /Liquidity|<dt>Network<\/dt>|pp-liquidity/);
+  const tile = readFileSync(new URL("../../extensions/start/newtab.html", import.meta.url), "utf8");
+  assert.doesNotMatch(tile, /Uniswap/);
 });
 
 test("keepTogether breaks only between the parts", () => {

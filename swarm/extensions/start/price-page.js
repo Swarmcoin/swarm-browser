@@ -74,7 +74,6 @@ function paint(f) {
   show($("pp-stats"), v.usable);
   if (v.usable) {
     paintChart(f.reading);
-    $("pp-liquidity").textContent = v.stats.liquidity;
     $("pp-volume").textContent = v.stats.volume;
     $("pp-fdv").textContent = v.stats.fdv;
     $("pp-trades").textContent = v.stats.trades;
