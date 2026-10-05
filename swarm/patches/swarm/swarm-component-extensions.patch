@@ -16,7 +16,7 @@
        </if>
 --- a/chrome/browser/resources/component_extension_resources.grd
 +++ b/chrome/browser/resources/component_extension_resources.grd
-@@ -21,6 +21,93 @@
+@@ -21,6 +21,98 @@
  
        <include name="IDR_READING_MODE_GDOC_HELPER_CONTENT_JS" file="reading_mode_gdocs_helper/content.js" type="BINDATA" />
        <include name="IDR_READING_MODE_GDOC_HELPER_GDOCS_SCRIPT_JS" file="reading_mode_gdocs_helper/gdocs_script.js" type="BINDATA" />
@@ -96,6 +96,9 @@
 +      <include name="IDR_SWARM_START_ICONS_START_48_PNG" file="swarm_start/icons/start-48.png" type="BINDATA" />
 +      <include name="IDR_SWARM_START_LIB_DESTINATIONS_JS" file="swarm_start/lib/destinations.js" type="BINDATA" />
 +      <include name="IDR_SWARM_START_LIB_FORMAT_JS" file="swarm_start/lib/format.js" type="BINDATA" />
++      <include name="IDR_SWARM_START_LIB_PRICE_FEED_JS" file="swarm_start/lib/price-feed.js" type="BINDATA" />
++      <include name="IDR_SWARM_START_LIB_PRICE_VIEW_JS" file="swarm_start/lib/price-view.js" type="BINDATA" />
++      <include name="IDR_SWARM_START_LIB_PRICE_JS" file="swarm_start/lib/price.js" type="BINDATA" />
 +      <include name="IDR_SWARM_START_LIB_PRIVACY_JS" file="swarm_start/lib/privacy.js" type="BINDATA" />
 +      <include name="IDR_SWARM_START_LIB_QUERY_JS" file="swarm_start/lib/query.js" type="BINDATA" />
 +      <include name="IDR_SWARM_START_LIB_SETTINGS_JS" file="swarm_start/lib/settings.js" type="BINDATA" />
@@ -104,6 +107,8 @@
 +      <include name="IDR_SWARM_START_NEWTAB_HTML" file="swarm_start/newtab.html" type="BINDATA" />
 +      <include name="IDR_SWARM_START_NEWTAB_JS" file="swarm_start/newtab.js" type="BINDATA" />
 +      <include name="IDR_SWARM_START_OPEN_JS" file="swarm_start/open.js" type="BINDATA" />
++      <include name="IDR_SWARM_START_PRICE_PAGE_JS" file="swarm_start/price-page.js" type="BINDATA" />
++      <include name="IDR_SWARM_START_PRICE_HTML" file="swarm_start/price.html" type="BINDATA" />
 +      <include name="IDR_SWARM_START_PRIVACY_HTML" file="swarm_start/privacy.html" type="BINDATA" />
 +      <include name="IDR_SWARM_START_START_CSS" file="swarm_start/start.css" type="BINDATA" />
 +      <include name="IDR_SWARM_START_WELCOME_HTML" file="swarm_start/welcome.html" type="BINDATA" />
@@ -112,7 +117,7 @@
        <include name="IDR_GLIC_EXTENSION_BACKGROUND_JS" file="${root_gen_dir}/chrome/browser/resources/glic/extension/tsc/background.js" use_base_dir="false" resource_path="glic_extension/background.js" type="BINDATA" />
 --- a/chrome/browser/resources/BUILD.gn
 +++ b/chrome/browser/resources/BUILD.gn
-@@ -247,6 +247,93 @@
+@@ -247,6 +247,98 @@
        "network_speech_synthesis/tts_extension.js",
        "reading_mode_gdocs_helper/content.js",
        "reading_mode_gdocs_helper/gdocs_script.js",
@@ -192,6 +197,9 @@
 +      "swarm_start/icons/start-48.png",
 +      "swarm_start/lib/destinations.js",
 +      "swarm_start/lib/format.js",
++      "swarm_start/lib/price-feed.js",
++      "swarm_start/lib/price-view.js",
++      "swarm_start/lib/price.js",
 +      "swarm_start/lib/privacy.js",
 +      "swarm_start/lib/query.js",
 +      "swarm_start/lib/settings.js",
@@ -200,6 +208,8 @@
 +      "swarm_start/newtab.html",
 +      "swarm_start/newtab.js",
 +      "swarm_start/open.js",
++      "swarm_start/price-page.js",
++      "swarm_start/price.html",
 +      "swarm_start/privacy.html",
 +      "swarm_start/start.css",
 +      "swarm_start/welcome.html",
