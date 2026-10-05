@@ -18,7 +18,7 @@ Upstream provenance of this checkout:
 | `ungoogled-chromium-windows` tag | `153.0.8010.52-1.1`, commit `4fe389fe08dac85cead3ea77afe59834dbbc9673` |
 | `ungoogled-chromium` submodule | tag `153.0.8010.52-1`, commit `a638756eb14c8b6ce64b4b2a067afea5d4207bf4` |
 | Chromium | `153.0.8010.52` (`ungoogled-chromium/chromium_version.txt`) |
-| SWARM layer build | `swarm/revision.txt` (currently `6`: build 8, wallet extension 0.2.1 with the SWM price (wallet host unchanged at 0.2.0, see **Where the extensions come from**). `5` was build 7, the built-in wallet on the SWARM mainnet restarted on 2 October 2026 (wallet host 0.2.0 and wallet extension 0.2.0, see **The bundled wallet host**). `4` was build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-6-`) |
+| SWARM layer build | `swarm/revision.txt` (currently `7`: build 9, wallet extension 0.2.2 (no liquidity figure, no chain or DEX on the price display) and the SWM price on SWARM Start 0.2.0 (wallet host unchanged at 0.2.0, see **Where the extensions come from**). `6` was build 8, wallet extension 0.2.1 with the SWM price. `5` was build 7, the built-in wallet on the SWARM mainnet restarted on 2 October 2026 (wallet host 0.2.0 and wallet extension 0.2.0, see **The bundled wallet host**). `4` was build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-7-`) |
 
 Licences: upstream `LICENSE` files are untouched. The SWARM notices, and the
 BSD-3 notices for Chromium and ungoogled-chromium, are in `NOTICE-SWARM.md` at
@@ -568,7 +568,8 @@ evening: no liquidity figure and no network data). SWARM Start 0.2.0:
   own storage, so the two are separate switches (extensions cannot read each
   other's storage, and the wallet answers no other extension but Rewards).
 * **`lib/price.js` is the wallet's module**, copied byte for byte from
-  privacy-wallet `c7fa1a67` below a header naming the origin;
+  privacy-wallet `60203e41` (wallet 0.2.2; `c7fa1a67` before build 9 was made)
+  below a header naming the origin;
   `tests/start/price-copy.test.mjs` pins it by hash and to the wallet copy
   bundled in `extensions/wallet`, so re-copying a wallet with a new price
   module fails the Start tests until this copy follows. The Start-specific
@@ -595,7 +596,7 @@ Edge with a fake `chrome.*` and a fake relay (`harness-stub.js`); the results
 are in `swarm/tests/start/screenshots/`. All of it sits under `swarm/tests`,
 because `make_swarm_patches.py` ships every file under `extensions/start`.
 
-`revision.txt` is not changed here; it moves when build 9 is made.
+`revision.txt` moved to `7` when build 9 was made.
 
 ### `swarm-installer-host.patch` (1 file, 1 hunk)
 
@@ -705,7 +706,7 @@ own installer). Building the host in CI is the remaining half of this task.
 An x86 or arm64 build made on a machine with `host-dist` would carry the same
 x64 host; only x64 is a release target.
 
-Locally built for build 7 and unchanged for build 8 (`D:/swarm-work/host-dist/SHA256SUMS.txt`, 2026-10-03; re-checked 2026-10-05):
+Locally built for build 7 and unchanged for builds 8 and 9 (`D:/swarm-work/host-dist/SHA256SUMS.txt`, 2026-10-03; re-checked 2026-10-05):
 host 0.2.0 from `privacy-wallet-browser` branch `relaunch/browser-host`
 (`dba9efa7`, on `79c0c039`), with the wallet core of SWARM Wallet
 0.1.0-mainnet.10 (`resources/app.asar.unpacked/build/native.node` of
@@ -747,9 +748,9 @@ Start carries one more copy from there, the wallet's price module
 
 | | |
 | --- | --- |
-| Repository | `privacy-wallet` (`Swarmcoin/privacy-wallet`; SWARM Wallet for build 8 from the worktree `D:/swarm-work/wallet-price-browser`); `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) before |
-| Branch | `price-display/browser` (SWARM Wallet: build 8); `relaunch/browser-host` (build 7); `codex/browser-wallet-host` before |
-| Commit | wallet `c7fa1a67e4c9a3976d1425bb1ae1fd6e0f8aa730` (2026-10-05, extension 0.2.1: the SWM price, see below); build 7 had `dba9efa7` (extension 0.2.0); rewards `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
+| Repository | `privacy-wallet` (`Swarmcoin/privacy-wallet`; SWARM Wallet for builds 8 and 9 from the worktree `D:/swarm-work/wallet-price-browser`); `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) before |
+| Branch | `price-display/browser` (SWARM Wallet: builds 8 and 9); `relaunch/browser-host` (build 7); `codex/browser-wallet-host` before |
+| Commit | wallet `60203e41` (2026-10-05, extension 0.2.2: no liquidity figure and no "Base · Uniswap v4" on the price display, see below); build 8 had `c7fa1a67e4c9a3976d1425bb1ae1fd6e0f8aa730` (extension 0.2.1, the SWM price); build 7 had `dba9efa7` (extension 0.2.0); rewards `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
 | `browser/extension` | -> `swarm/extensions/wallet`, 23 files |
 | `browser/rewards-extension` | -> `swarm/extensions/rewards`, 16 files |
 | Left behind | `test/`, `package.json`, `node_modules` |
@@ -791,6 +792,19 @@ The patch regeneration for build 8 used a scratch tree of the 28 target files:
 taken from a verify tree, the SWARM series that tree carried reversed, and
 checked first by running the generator unchanged at build 7 (`d6cea86`), which
 reproduced all fourteen patches and `series` byte for byte.
+
+**Wallet extension 0.2.2 and SWARM Start (build 9).** Owner's change of
+2026-10-05 evening: the popup's price page drops the Liquidity and Network
+rows, and the price line no longer starts with "Base · Uniswap v4" (four files
+changed, none added or removed, so the patches did not change: the generator
+reproduced all fourteen byte for byte). SWARM Start 0.2.0 (branch
+`swarm/build9-start-price`, `2db502f`) carries its own copy of `lib/price.js`;
+it now follows the wallet's `60203e41` (header, `price-copy.test.mjs` pin
+`53b33703…8e54`, and the wallet suite copy in `tests/start/price.test.mjs`).
+The extension files of build 9 were checked out with LF line endings before
+`install_swarm_assets.py` copied them, so the packed files are the source's
+bytes; in builds 7 and 8 they were CRLF, from a checkout with
+`core.autocrlf=true` (same text, different line endings).
 
 One file in the wallet, `icons/swarm-mark.svg`, is referenced by nothing; it is
 copied because the rule here is to take the folder as it stands rather than to

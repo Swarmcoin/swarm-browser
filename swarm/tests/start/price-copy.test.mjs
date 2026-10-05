@@ -13,8 +13,8 @@ import test from "node:test";
 
 import { EXTENSIONS_DIR, START_DIR } from "./helpers.mjs";
 
-/** privacy-wallet c7fa1a67 browser/extension/lib/price.js, LF, as a sha256. */
-const SOURCE_SHA256 = "7f1917940c7129c8f6bfdbeb9dce18614f24bd31316800764bbabac103331913";
+/** privacy-wallet 60203e41 browser/extension/lib/price.js, LF, as a sha256. */
+const SOURCE_SHA256 = "53b33703c45c4ff32136117962340cad35f83d7d5328679dd0c4b5d48d2b8e54";
 const HEADER_END = "\n */\n";
 
 /** A checkout on Windows may carry CRLF; the comparison is on the LF text git stores. */
@@ -27,10 +27,10 @@ function startCopy() {
   return { header: text.slice(0, end + HEADER_END.length), body: text.slice(end + HEADER_END.length) };
 }
 
-test("below its header, lib/price.js is the wallet source c7fa1a67 byte for byte", () => {
+test("below its header, lib/price.js is the wallet source 60203e41 byte for byte", () => {
   const { header, body } = startCopy();
   assert.equal(createHash("sha256").update(body, "utf8").digest("hex"), SOURCE_SHA256);
-  assert.match(header, /commit c7fa1a67/);
+  assert.match(header, /commit 60203e41/);
   assert.match(header, new RegExp(SOURCE_SHA256));
   assert.match(header, /--- end of the SWARM Start header ---/);
 });

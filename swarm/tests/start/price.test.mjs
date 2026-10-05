@@ -1,6 +1,6 @@
 /**
  * SWARM Start's copy of the wallet's price module (extensions/start/lib/price.js),
- * tested with the wallet's own suite: privacy-wallet c7fa1a67
+ * tested with the wallet's own suite: privacy-wallet 60203e41
  * browser/extension/test/price.test.mjs, with only the import path changed and
  * this header and helpers.mjs (no network) added. The fixtures beside it are the
  * wallet's, unchanged. The copy itself is pinned in price-copy.test.mjs.
@@ -331,8 +331,8 @@ test("freshness wording", () => {
   // 1791223633 = 2026-10-05 18:07:13 UTC
   assert.equal(freshnessText(r, T0 + 6 * 60_000, "UTC"), "as of 18:07");
   assert.equal(freshnessText(r, T0 + 2 * 3600_000, "UTC"), "price unavailable");
-  assert.equal(metaLine(r, T0 + 12_000, "UTC"), "Base · Uniswap v4 · GeckoTerminal · updated 12 s ago");
-  assert.equal(metaLine(reading({ source: null }), T0 + 6 * 60_000, "UTC"), "Base · Uniswap v4 · as of 18:07");
+  assert.equal(metaLine(r, T0 + 12_000, "UTC"), "GeckoTerminal · updated 12 s ago");
+  assert.equal(metaLine(reading({ source: null }), T0 + 6 * 60_000, "UTC"), "as of 18:07");
 });
 
 test("the §6.1 fields survive storage, and are checked again on the way out", () => {

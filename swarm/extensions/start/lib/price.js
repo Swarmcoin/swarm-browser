@@ -1,9 +1,9 @@
 /*
  * SWARM Start's copy of the SWARM Wallet's price module. Do not edit here.
  *
- * Origin: privacy-wallet (Swarmcoin/privacy-wallet), commit c7fa1a67,
- * browser/extension/lib/price.js (blob 1ee7b3e2, sha256 of the LF text
- * 7f1917940c7129c8f6bfdbeb9dce18614f24bd31316800764bbabac103331913). Same
+ * Origin: privacy-wallet (Swarmcoin/privacy-wallet), commit 60203e41,
+ * browser/extension/lib/price.js (blob 7c7a5248, sha256 of the LF text
+ * 53b33703c45c4ff32136117962340cad35f83d7d5328679dd0c4b5d48d2b8e54). Same
  * project, same licence. Everything below the line that ends this header is
  * that file byte for byte; swarm/tests/start/price.test.mjs checks it against
  * the hash above AND against the wallet's own copy in swarm/extensions/wallet,
@@ -455,9 +455,9 @@ export function freshnessText(reading, nowMs, timeZone) {
   return `as of ${clockTime(at, timeZone)}`;
 }
 
-/** "Base · Uniswap v4 · GeckoTerminal · updated 12 s ago". */
+/** "GeckoTerminal · updated 12 s ago" (spec §3 as amended 2026-10-05: no chain or DEX shown). */
 export function metaLine(reading, nowMs, timeZone) {
-  const parts = ["Base", "Uniswap v4"];
+  const parts = [];
   if (reading && reading.source) parts.push(SOURCE_NAMES[reading.source]);
   parts.push(freshnessText(reading, nowMs, timeZone));
   return parts.join(" · ");
