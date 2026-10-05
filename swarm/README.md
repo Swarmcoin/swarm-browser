@@ -58,7 +58,8 @@ swarm/
   extensions/start/                    bundled SWARM Start: new tab, Navigator, welcome page
   updates/                             make, sign and check the update feed (updates/README.md)
   tests/update/                        node --test suites + Edge smoke test for SWARM Update
-  tests/start/                         node --test suites for SWARM Start's pure logic
+  tests/start/                         node --test suites for SWARM Start's pure logic, and
+                                       the price screenshot harness (screenshots.mjs)
   tests/brand/                         unit tests for the two string rewriters
   devutils/                            regenerate the series, verify it, parse-check it
   install_swarm_assets.py              copies icons, UI logos + extensions into build/src
@@ -367,15 +368,19 @@ other three:
   GETs per new tab to `lwd-main.swarm.green/status.json` and
   `swarm.green/data/swarm-map-live.json` (`credentials: "omit"`, no referrer;
   SWARM mainnet only, `lib/format.js`). The three switches are kept in
-  `chrome.storage.local` (`startSettings`).
+  `chrome.storage.local` (`startSettings`). Build 9 adds a fourth tile, the
+  SWM price, which is ON by default: see **SWARM Start: the SWM price
+  (build 9)** below.
 * `side_panel` + `action`: the SWARM Navigator. The toolbar button (the mark
   in amber on transparency, so it is not mistaken for the wallet's dark tile)
   opens the side panel (`setPanelBehavior({openPanelOnActionClick: true})`
   in `background.js`).
 * `welcome.html`: the first-run page (below).
 * Permissions `storage`, `sidePanel`, `search`; host permissions for the two
-  status files only; CSP `connect-src https://lwd-main.swarm.green
-  https://swarm.green`; nothing web-accessible, no content script, no
+  status files (and, since build 9, the price service
+  `https://wallet.swarm.green/api/price/swm`); CSP `connect-src
+  https://lwd-main.swarm.green https://swarm.green` (build 9: plus
+  `https://wallet.swarm.green`); nothing web-accessible, no content script, no
   `externally_connectable`.
 
 **The wallet and SWARM Update are opened, never talked to.** Neither exposes
@@ -522,6 +527,76 @@ autofill, the profile rows) and the empty-Downloads illustration
 replaced files are shared (the close X, the pencil, the search glass, the
 warning triangle), so every surface that draws them changes with them.
 
+### SWARM Start: the SWM price (build 9)
+
+Owner order 2026-10-05: the SWM price shown by the SWARM Browser itself, not
+only inside the wallet popup (`specs/PRICE-DISPLAY.md` §7 in the project
+repository; §3 the card, §6.2 the page, as amended by the owner the same
+evening: no liquidity figure and no network data). SWARM Start 0.2.0:
+
+* **The tile** (`newtab.html`, `newtab.js`): `SWM PRICE` with the SWARM mark
+  and a freshness dot (honey = fresh, amber ring = ageing, grey = stale), the
+  price in Sora, `USD`, the 24 h change chip (green up, red down, grey flat),
+  a 48 h sparkline (inline SVG, styled by class: the CSP still allows no
+  inline style), the line `GeckoTerminal · updated 12 s ago` and an (i) with
+  the note "Indicative price … Not a quote." A remembered price is greyed
+  until this page has confirmed it; after an hour without a good reading the
+  tile says "Price unavailable". The whole tile opens `price.html` in the same
+  tab.
+* **The page** (`price.html`, `price-page.js`): back to SWARM Start, the
+  price large with its ETH price, 1h / 6h / 24h chips, a chart with 24h / 48h
+  / 30d (lowest, highest and latest labelled; the hover readout calls the last
+  point "now", because the relay ends both series with the live price), 24 h
+  volume, fully diluted value, buys / sells and pool fee, the two sources
+  (each a link to its fixed listing page, `rel="noopener noreferrer"`), pool
+  and token ids with Copy, the note and the switch. There is no "Your
+  balance" row: SWARM Start shows no balance (see **Open**).
+* **When it asks** (`lib/price-feed.js`): nothing before the switch has been
+  read, nothing while it is off or cannot be read. A page paints first from
+  the remembered reading (`swmPriceLast`), then makes one GET; after that one
+  a minute, **only while the tab is in view** (`document.visibilityState`): a
+  new tab left in the background asks nothing, and coming back into view asks
+  at once. A reading under 20 s old stored by another SWARM Start tab counts
+  as fresh, so opening five new tabs in a row makes one request. The request
+  carries no cookies, no referrer, no identifier, follows no redirect, gives
+  up after 8 s and accepts at most 64 KiB (`lib/price.js`).
+* **The switch** "Show SWM price (USD)", **default ON** as in every SWARM
+  wallet (spec §2.2), in the Start page's settings (the gear) and at the foot
+  of the price page, with the spec's help text said for SWARM Start. Off = no
+  request and no tile. It is SWARM Start's own `chrome.storage.local` value
+  `showSwmPrice`; the wallet extension keeps a value of the same name in its
+  own storage, so the two are separate switches (extensions cannot read each
+  other's storage, and the wallet answers no other extension but Rewards).
+* **`lib/price.js` is the wallet's module**, copied byte for byte from
+  privacy-wallet `c7fa1a67` below a header naming the origin;
+  `tests/start/price-copy.test.mjs` pins it by hash and to the wallet copy
+  bundled in `extensions/wallet`, so re-copying a wallet with a new price
+  module fails the Start tests until this copy follows. The Start-specific
+  parts (what is shown, when to ask) are `lib/price-view.js` and
+  `lib/price-feed.js`.
+* **What a new tab contacts now**: `https://wallet.swarm.green/api/price/swm`
+  (while the switch is on, the default) and, only with "Network now" on, the
+  two status files. The manifest description, the settings hints, the
+  Network-now tile and the welcome page say so; the old "asks no server
+  anything" sentence is gone from all of them.
+* Five new files, so `swarm-component-extensions.patch` gained five lines in
+  the grd and five in `BUILD.gn`, regenerated with `make_swarm_patches.py`
+  on a scratch tree on which the build-8 generator first reproduced all
+  fourteen patches byte for byte (the method under **Where the extensions
+  come from**).
+
+Tests: `node --test "swarm/tests/start/*.test.mjs"` (89, no network: the
+wallet's own price suite on the copy, the copy pin, what the tile and page
+show in every freshness state, the polling schedule with fake timers and a
+fake relay, and the manifest's three hosts). Screenshots:
+`node swarm/tests/start/screenshots.mjs [--live]` serves `swarm/` on
+127.0.0.1 and renders the real `newtab.html` and `price.html` in headless
+Edge with a fake `chrome.*` and a fake relay (`harness-stub.js`); the results
+are in `swarm/tests/start/screenshots/`. All of it sits under `swarm/tests`,
+because `make_swarm_patches.py` ships every file under `extensions/start`.
+
+`revision.txt` is not changed here; it moves when build 9 is made.
+
 ### `swarm-installer-host.patch` (1 file, 1 hunk)
 
 `chrome/installer/mini_installer/chrome.release` is the list of files the
@@ -666,7 +741,9 @@ SWARM Update is written here: `swarm/extensions/update`, with its tests in
 tools in `swarm/updates`. See **The update channel** below.
 
 SWARM Wallet and SWARM Rewards are not written here. Both are copies from the
-wallet repository, which is where they are developed and tested:
+wallet repository, which is where they are developed and tested (and SWARM
+Start carries one more copy from there, the wallet's price module
+`lib/price.js`; see **SWARM Start: the SWM price (build 9)**):
 
 | | |
 | --- | --- |
