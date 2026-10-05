@@ -18,7 +18,7 @@ Upstream provenance of this checkout:
 | `ungoogled-chromium-windows` tag | `153.0.8010.52-1.1`, commit `4fe389fe08dac85cead3ea77afe59834dbbc9673` |
 | `ungoogled-chromium` submodule | tag `153.0.8010.52-1`, commit `a638756eb14c8b6ce64b4b2a067afea5d4207bf4` |
 | Chromium | `153.0.8010.52` (`ungoogled-chromium/chromium_version.txt`) |
-| SWARM layer build | `swarm/revision.txt` (currently `5`: build 7, the built-in wallet on the SWARM mainnet restarted on 2 October 2026 (wallet host 0.2.0 and wallet extension 0.2.0, see **The bundled wallet host**). `4` was build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-5-`) |
+| SWARM layer build | `swarm/revision.txt` (currently `6`: build 8, wallet extension 0.2.1 with the SWM price (wallet host unchanged at 0.2.0, see **Where the extensions come from**). `5` was build 7, the built-in wallet on the SWARM mainnet restarted on 2 October 2026 (wallet host 0.2.0 and wallet extension 0.2.0, see **The bundled wallet host**). `4` was build 6, DuckDuckGo as the default search engine, no new-tab footer, the rest of the icon set. `3` was build 5 (SWARM Start, welcome page, branding), `2` the installer carrying the wallet host, `1` the first build; the packages carry the number in their name, `-6-`) |
 
 Licences: upstream `LICENSE` files are untouched. The SWARM notices, and the
 BSD-3 notices for Chromium and ungoogled-chromium, are in `NOTICE-SWARM.md` at
@@ -630,7 +630,7 @@ own installer). Building the host in CI is the remaining half of this task.
 An x86 or arm64 build made on a machine with `host-dist` would carry the same
 x64 host; only x64 is a release target.
 
-Locally built for build 7 (`D:/swarm-work/host-dist/SHA256SUMS.txt`, 2026-10-03):
+Locally built for build 7 and unchanged for build 8 (`D:/swarm-work/host-dist/SHA256SUMS.txt`, 2026-10-03; re-checked 2026-10-05):
 host 0.2.0 from `privacy-wallet-browser` branch `relaunch/browser-host`
 (`dba9efa7`, on `79c0c039`), with the wallet core of SWARM Wallet
 0.1.0-mainnet.10 (`resources/app.asar.unpacked/build/native.node` of
@@ -670,10 +670,10 @@ wallet repository, which is where they are developed and tested:
 
 | | |
 | --- | --- |
-| Repository | `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) |
-| Branch | `relaunch/browser-host` (SWARM Wallet: build 7); `codex/browser-wallet-host` before |
-| Commit | wallet `dba9efa7` (2026-10-03, extension 0.2.0: the restart sentence and explorer links); rewards `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
-| `browser/extension` | -> `swarm/extensions/wallet`, 22 files |
+| Repository | `privacy-wallet` (`Swarmcoin/privacy-wallet`; SWARM Wallet for build 8 from the worktree `D:/swarm-work/wallet-price-browser`); `privacy-wallet-browser` (`D:/swarm-work/privacy-wallet-browser` locally) before |
+| Branch | `price-display/browser` (SWARM Wallet: build 8); `relaunch/browser-host` (build 7); `codex/browser-wallet-host` before |
+| Commit | wallet `c7fa1a67e4c9a3976d1425bb1ae1fd6e0f8aa730` (2026-10-05, extension 0.2.1: the SWM price, see below); build 7 had `dba9efa7` (extension 0.2.0); rewards `79c0c0391d21776714fabae863afcb10ca989b46` (2026-09-27) |
+| `browser/extension` | -> `swarm/extensions/wallet`, 23 files |
 | `browser/rewards-extension` | -> `swarm/extensions/rewards`, 16 files |
 | Left behind | `test/`, `package.json`, `node_modules` |
 
@@ -696,6 +696,24 @@ from the copied manifests after every copy:
   host manifest (`browser/install/green.swarm.wallet_host.json` over there)
   names in `allowed_origins`
 * rewards `gjmgdanakkpkgpmecnecoliifonlapnb`
+
+**Wallet extension 0.2.1 (build 8).** It shows the SWM price (`specs/PRICE-DISPLAY.md` in
+the project repository): a new module `lib/price.js` (the 23rd file, so
+`swarm-component-extensions.patch` gained one line in the grd and one in
+`BUILD.gn`, regenerated, not hand-edited), the price on the popup and a price
+page, and a switch in Settings. It is the first version that talks to anything
+but the wallet host: `host_permissions` names exactly
+`https://wallet.swarm.green/api/price/swm` and the extension pages' CSP moves
+from `connect-src 'none'` to `connect-src https://wallet.swarm.green`. The price
+is "a display value, not an accounting one" (`lib/price.js`). The copy was
+taken with `git archive c7fa1a67 browser/extension`, so the index holds the
+source's blobs exactly (same blob ids, LF); the source suite passed there
+(63/63 under `node --test`).
+
+The patch regeneration for build 8 used a scratch tree of the 28 target files:
+taken from a verify tree, the SWARM series that tree carried reversed, and
+checked first by running the generator unchanged at build 7 (`d6cea86`), which
+reproduced all fourteen patches and `series` byte for byte.
 
 One file in the wallet, `icons/swarm-mark.svg`, is referenced by nothing; it is
 copied because the rule here is to take the folder as it stands rather than to

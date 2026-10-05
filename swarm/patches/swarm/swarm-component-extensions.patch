@@ -16,7 +16,7 @@
        </if>
 --- a/chrome/browser/resources/component_extension_resources.grd
 +++ b/chrome/browser/resources/component_extension_resources.grd
-@@ -21,6 +21,92 @@
+@@ -21,6 +21,93 @@
  
        <include name="IDR_READING_MODE_GDOC_HELPER_CONTENT_JS" file="reading_mode_gdocs_helper/content.js" type="BINDATA" />
        <include name="IDR_READING_MODE_GDOC_HELPER_GDOCS_SCRIPT_JS" file="reading_mode_gdocs_helper/gdocs_script.js" type="BINDATA" />
@@ -34,6 +34,7 @@
 +      <include name="IDR_SWARM_WALLET_ICONS_SWARM_MARK_SVG" file="swarm_wallet/icons/swarm-mark.svg" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_ICONS_WALLET_128_PNG" file="swarm_wallet/icons/wallet-128.png" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_ICONS_WALLET_192_PNG" file="swarm_wallet/icons/wallet-192.png" type="BINDATA" />
++      <include name="IDR_SWARM_WALLET_LIB_PRICE_JS" file="swarm_wallet/lib/price.js" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_LIB_QR_JS" file="swarm_wallet/lib/qr.js" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_LIB_REWARDS_JS" file="swarm_wallet/lib/rewards.js" type="BINDATA" />
 +      <include name="IDR_SWARM_WALLET_LIB_SENDER_JS" file="swarm_wallet/lib/sender.js" type="BINDATA" />
@@ -111,7 +112,7 @@
        <include name="IDR_GLIC_EXTENSION_BACKGROUND_JS" file="${root_gen_dir}/chrome/browser/resources/glic/extension/tsc/background.js" use_base_dir="false" resource_path="glic_extension/background.js" type="BINDATA" />
 --- a/chrome/browser/resources/BUILD.gn
 +++ b/chrome/browser/resources/BUILD.gn
-@@ -247,6 +247,92 @@
+@@ -247,6 +247,93 @@
        "network_speech_synthesis/tts_extension.js",
        "reading_mode_gdocs_helper/content.js",
        "reading_mode_gdocs_helper/gdocs_script.js",
@@ -126,6 +127,7 @@
 +      "swarm_wallet/icons/swarm-mark.svg",
 +      "swarm_wallet/icons/wallet-128.png",
 +      "swarm_wallet/icons/wallet-192.png",
++      "swarm_wallet/lib/price.js",
 +      "swarm_wallet/lib/qr.js",
 +      "swarm_wallet/lib/rewards.js",
 +      "swarm_wallet/lib/sender.js",
